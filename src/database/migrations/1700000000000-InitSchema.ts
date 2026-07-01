@@ -53,6 +53,7 @@ export class InitSchema1700000000000 implements MigrationInterface {
         "additionalAttributes" jsonb,
         "categoryId" uuid NOT NULL,
         "group2" character varying,
+        "partner_code" character varying,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
         "syncedAt" TIMESTAMP,

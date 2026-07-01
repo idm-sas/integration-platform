@@ -34,21 +34,19 @@ export class ProductService {
    * Format scope: "product:read:electronics" atau "product:read:*"
    */
   private getAllowedCategories(scopes: string[]): string[] | null {
-    const allowed: string[] = [];
+    if (scopes.includes('product:read:*')) return null;
 
+    const allowed: string[] = [];
     for (const scope of scopes) {
-      if (scope === 'product:read:*') return null;
       const match = scope.match(/^product:read:(.+)$/);
       if (match) allowed.push(match[1].toLowerCase());
     }
-
     return allowed;
   }
 
   private hasPriceScope(scopes: string[]): boolean {
-    return scopes.some(
-      (s) => s === 'price:read:*' || s.startsWith('price:read:'),
-    );
+    if (scopes.includes('price:read:*')) return true;
+    return scopes.some((s) => s.startsWith('price:read:'));
   }
 
   private validateCategoryAccess(
@@ -84,18 +82,17 @@ export class ProductService {
       uom: product.uom,
       isActive: product.isActive,
       categoryId: product.category?.id,
-      categoryCode: product.category?.code,
       categoryName: product.category?.name,
+      group2: product.group2,
+      imageUrl: product.imageUrl,
+      partner_code: product.partner_code,
       syncedAt: product.syncedAt,
       ...(includePrices && {
         prices: (product.prices || []).map((pp) => ({
           priceListId: pp.priceListId,
           priceListName: pp.priceListName,
           listPrice: Number(pp.listPrice),
-          standardPrice: Number(pp.standardPrice),
           currency: pp.currency,
-          validFrom: pp.validFrom ?? null,
-          validTo: pp.validTo ?? null,
         })),
       }),
     };
@@ -113,12 +110,12 @@ export class ProductService {
 
     // Filter by allowed categories dari scope token
     if (allowedCats !== null && allowedCats.length > 0) {
-      qb.andWhere('LOWER(category.code) IN (:...cats)', { cats: allowedCats });
+      qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats });
     }
 
     // Filter by query params
     if (query.category) {
-      qb.andWhere('LOWER(category.code) = :cat', {
+      qb.andWhere('LOWER(category.name) = :cat', {
         cat: query.category.toLowerCase(),
       });
     }

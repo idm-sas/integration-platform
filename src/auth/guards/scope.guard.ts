@@ -26,6 +26,9 @@ export class ScopeGuard implements CanActivate {
       throw new ForbiddenException('No scopes in token');
     }
 
+    // Super principal bypass semua scope check
+    if ((user as any).isSuper === true) return true;
+
     const hasScope = requiredScopes.some((required) => {
       // Support wildcard matching: "product:read:*" matches "product:read:electronics"
       if (required.endsWith(':*')) {

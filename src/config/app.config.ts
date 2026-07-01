@@ -4,6 +4,8 @@ export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.APP_PORT, 10) || 3000,
   env: process.env.APP_ENV || 'development',
   name: process.env.APP_NAME || 'idempiere-middleware',
+  superPrincipalClientId: process.env.SUPER_PRINCIPAL_CLIENT_ID || 'super_admin',
+  superPrincipalClientSecret: process.env.SUPER_PRINCIPAL_CLIENT_SECRET,
 }));
 
 export const dbConfig = registerAs('database', () => ({

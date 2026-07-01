@@ -43,6 +43,9 @@ export class Product {
   @Column()
   categoryId: string;
 
+  @Column({ nullable: true })
+  partner_code: string;
+
   @ManyToOne(() => ProductCategory, (cat) => cat.products)
   @JoinColumn({ name: 'categoryId' })
   category: ProductCategory;

@@ -22,13 +22,18 @@ export class AuditLogMiddleware implements NestMiddleware {
         const durationMs = Date.now() - startTime;
         const user = req.user;
 
-        // Skip health check endpoints dari audit log
         if (req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
           return;
         }
 
+        // Kalau super principal atau principalId bukan UUID valid → set null
+        const principalId =
+          user?.principalId && user.principalId !== 'super'
+            ? user.principalId
+            : null;
+
         await this.auditLogRepo.save({
-          principalId: user?.principalId || null,
+          principalId,
           method: req.method,
           endpoint: req.path,
           queryParams: Object.keys(req.query).length > 0

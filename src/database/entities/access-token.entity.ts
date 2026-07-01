@@ -9,10 +9,11 @@ export class AccessToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  /** Nullable karena super principal tidak ada di tabel principals */
+  @Column({ nullable: true })
   principalId: string;
 
-  @ManyToOne(() => Principal, (p) => p.accessTokens)
+  @ManyToOne(() => Principal, (p) => p.accessTokens, { nullable: true })
   @JoinColumn({ name: 'principalId' })
   principal: Principal;
 
@@ -22,6 +23,10 @@ export class AccessToken {
 
   @Column('simple-array')
   scopes: string[];
+
+  /** Flag super principal — bypass semua scope & category check */
+  @Column({ default: false })
+  isSuper: boolean;
 
   @Column()
   expiresAt: Date;

@@ -19,8 +19,10 @@ export interface IdempiereProductRecord extends IdempiereRecord {
   Name: string;
   Description?: string;
   IsActive: string;
-  C_UOM_ID?: { id: number; identifier: string };
-  M_Product_Category_ID?: { id: number; identifier: string };
+  C_UOM_ID?: { id: number; Name: string };
+  M_Product_Category_ID?: { id: number; Name: string };
+  Group1?: { id: string; identifier: string };
+  Group2?: { id: string; identifier: string };
   Updated: string;
   Created: string;
 }
@@ -35,8 +37,8 @@ export interface IdempiereCategoryRecord extends IdempiereRecord {
 }
 
 export interface IdempierePriceRecord extends IdempiereRecord {
-  M_Product_ID: { id: number; identifier: string };
-  M_PriceList_Version_ID: { id: number; identifier: string };
+  M_Product_ID: { id: number; Name: string };
+  M_PriceList_Version_ID: { id: number; Name: string };
   PriceList: number;
   PriceStd: number;
   PriceLimit: number;

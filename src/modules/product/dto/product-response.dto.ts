@@ -4,10 +4,7 @@ export class PriceDto {
   @ApiProperty() priceListId: number;
   @ApiProperty() priceListName: string;
   @ApiProperty() listPrice: number;
-  @ApiProperty() standardPrice: number;
   @ApiProperty() currency: string;
-  @ApiPropertyOptional() validFrom?: Date;
-  @ApiPropertyOptional() validTo?: Date;
 }
 
 export class ProductResponseDto {
@@ -18,9 +15,10 @@ export class ProductResponseDto {
   @ApiProperty() uom: string;
   @ApiProperty() isActive: boolean;
   @ApiProperty() categoryId: string;
-  @ApiPropertyOptional() group2?: string;
-  @ApiProperty() categoryCode: string;
   @ApiProperty() categoryName: string;
+  @ApiPropertyOptional() group2?: string;
+  @ApiPropertyOptional() imageUrl?: string;
+  @ApiPropertyOptional() partner_code?: string;
   @ApiPropertyOptional({ type: [PriceDto] }) prices?: PriceDto[];
   @ApiProperty() syncedAt: Date;
 }

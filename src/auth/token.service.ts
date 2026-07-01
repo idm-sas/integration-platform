@@ -35,6 +35,55 @@ export class TokenService {
   ) {}
 
   async generateToken(dto: TokenRequestDto) {
+    // ── Cek Super Principal dulu ──────────────────────────────
+    const superClientId = this.configService.get<string>('app.superPrincipalClientId');
+    const superClientSecret = this.configService.get<string>('app.superPrincipalClientSecret');
+
+    if (dto.clientId === superClientId) {
+      if (dto.clientSecret !== superClientSecret) {
+        throw new UnauthorizedException('Invalid super principal credentials');
+      }
+
+      // Grant semua scope tanpa cek mapping
+      const superScopes = [
+        'product:read:*',
+        'price:read:*',
+        'product:sync:*',
+      ];
+
+      const expiresIn = this.configService.get<number>('jwt.expiresIn') || 3600;
+      const payload = {
+        sub: superClientId,
+        principalId: 'super',
+        scopes: superScopes,
+        isSuper: true,
+      };
+
+      const token = this.jwtService.sign(payload, { expiresIn });
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+      await this.accessTokenRepo.save({
+        principalId: null,
+        tokenHash,
+        scopes: superScopes,
+        isSuper: true,
+        expiresAt,
+      });
+
+      this.logger.info('Super principal token issued');
+
+      return {
+        message: SUCCESS_MESSAGE.TOKEN,
+        data: {
+          accessToken: token,
+          tokenType: 'Bearer',
+          expiresIn,
+          scopes: superScopes,
+        },
+      };
+    }
+
     // 1. Validasi principal
     const principal = await this.principalRepo.findOne({
       where: { clientId: dto.clientId, isActive: true },
@@ -58,10 +107,10 @@ export class TokenService {
     // 3. Build available scopes dari DB mapping
     const availableScopes: string[] = [];
     for (const access of categoryAccesses) {
-      const catCode = access.category.code.toLowerCase();
-      if (access.canRead) availableScopes.push(`product:read:${catCode}`);
-      if (access.canReadPrice) availableScopes.push(`price:read:${catCode}`);
-      if (access.canSync) availableScopes.push(`product:sync:${catCode}`);
+      const catName = access.category.name.toLowerCase();
+      if (access.canRead) availableScopes.push(`product:read:${catName}`);
+      if (access.canReadPrice) availableScopes.push(`price:read:${catName}`);
+      if (access.canSync) availableScopes.push(`product:sync:${catName}`);
     }
 
     // 4. Filter scope yg diminta vs yg diizinkan

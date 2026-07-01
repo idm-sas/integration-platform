@@ -113,9 +113,9 @@ export class ProductSyncService implements OnApplicationBootstrap {
 
     try {
       // Urutan wajib: category → product → price
-      // results.push(await this.syncCategories('full'));
+      results.push(await this.syncCategories('full'));
       results.push(await this.syncProducts('full'));
-      // results.push(await this.syncPrices('full'));
+      results.push(await this.syncPrices('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -300,10 +300,10 @@ export class ProductSyncService implements OnApplicationBootstrap {
             code: record.Value || '',
             name: record.Name || '',
             description: record.Description || null,
-            uom: record.C_UOM_ID?.identifier || null,
+            uom: record.C_UOM_ID?.Name || null,
             uomId: record.C_UOM_ID?.id || null,
             isActive: this.toBoolean(record.IsActive),
-            group2: record.Group2 || null,
+            group2: record.Group2?.identifier || null,
             categoryId: category.id,
             syncedAt: new Date(),
           };
@@ -313,7 +313,6 @@ export class ProductSyncService implements OnApplicationBootstrap {
               existing.name       !== data.name       ||
               existing.code       !== data.code       ||
               existing.isActive   !== data.isActive   ||
-              existing.group2     !== data.group2     ||
               existing.categoryId !== data.categoryId;
 
             if (hasChange) {
@@ -384,7 +383,7 @@ export class ProductSyncService implements OnApplicationBootstrap {
             idempiereId: record.id,
             productId: product.id,
             priceListId: record.M_PriceList_Version_ID?.id,
-            priceListName: record.M_PriceList_Version_ID?.identifier || '',
+            priceListName: record.M_PriceList_Version_ID?.Name || '',
             listPrice: Number(record.PriceList || 0),
             standardPrice: Number(record.PriceStd || 0),
             limitPrice: Number(record.PriceLimit || 0),

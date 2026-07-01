@@ -117,7 +117,9 @@ export class IdempiereService {
     since: Date,
     extraParams: Record<string, any> = {},
   ): Promise<T[]> {
-    const sinceStr = since.toISOString().replace('T', ' ').substring(0, 19);
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const sinceWIB = new Date(since.getTime() + WIB_OFFSET_MS);
+    const sinceStr = sinceWIB.toISOString().replace('T', ' ').substring(0, 19);
     return this.fetchAllPages<T>(endpoint, {
       ...extraParams,
       '$filter': `Updated gt '${sinceStr}'`,
