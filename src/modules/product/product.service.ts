@@ -12,6 +12,7 @@ import { PrincipalCategoryAccess } from '../../database/entities/principal-categ
 import { ProductQueryDto } from './dto/product-query.dto';
 import { JwtPayload } from '../../auth/token.service';
 import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
+import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
 
 @Injectable()
 export class ProductService {
@@ -108,6 +109,10 @@ export class ProductService {
 
     const qb = this.buildProductQuery(includePrices);
 
+    qb.where('product.group2 NOT IN (:...excludedGroups)', {
+      excludedGroups: EXCLUDED_PRODUCT_GROUPS,
+    });
+
     // Filter by allowed categories dari scope token
     if (allowedCats !== null && allowedCats.length > 0) {
       qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats });
@@ -159,6 +164,9 @@ export class ProductService {
 
     const product = await this.buildProductQuery(includePrices)
       .where('product.id = :id', { id })
+      .andWhere('product.group2 NOT IN (:...excludedGroups)', {
+        excludedGroups: EXCLUDED_PRODUCT_GROUPS,
+      })
       .getOne();
 
     if (!product) {
@@ -181,6 +189,9 @@ export class ProductService {
 
     const product = await this.buildProductQuery(includePrices)
       .where('UPPER(product.code) = :code', { code: code.toUpperCase() })
+      .andWhere('product.group2 NOT IN (:...excludedGroups)', {
+        excludedGroups: EXCLUDED_PRODUCT_GROUPS,
+      })
       .getOne();
 
     if (!product) {
