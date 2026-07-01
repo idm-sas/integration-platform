@@ -7,6 +7,8 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+import { AuthModule } from './auth/auth.module';
+import { ProductModule } from './modules/product/product.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -85,7 +87,11 @@ async function bootstrap() {
       )
       .build();
 
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    const document = SwaggerModule.createDocument(app, swaggerConfig, {
+      // Hanya include module yang relevan untuk principal
+      include: [AuthModule, ProductModule],
+      extraModels: [],
+    });
 
     SwaggerModule.setup('docs', app, document, {
       swaggerOptions: {

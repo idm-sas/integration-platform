@@ -34,29 +34,29 @@ export class ProductController {
     return this.productService.findAll(query, principal);
   }
 
-  @Get(':id')
-  @RequireScopes('product:read:*')
-  @ApiOperation({ summary: 'Detail produk by ID' })
-  @ApiParam({ name: 'id', description: 'UUID produk' })
-  @ApiResponse({ status: 200, type: ProductResponseDto })
-  @ApiResponse({ status: 404, description: 'Product not found' })
-  @ApiResponse({ status: 403, description: 'Category not permitted' })
-  findOne(
-    @Param('id') id: string,
-    @CurrentPrincipal() principal: JwtPayload,
-  ) {
-    return this.productService.findOne(id, principal);
-  }
+  // @Get(':id')
+  // @RequireScopes('product:read:*')
+  // @ApiOperation({ summary: 'Detail produk by ID' })
+  // @ApiParam({ name: 'id', description: 'UUID produk' })
+  // @ApiResponse({ status: 200, type: ProductResponseDto })
+  // @ApiResponse({ status: 404, description: 'Product not found' })
+  // @ApiResponse({ status: 403, description: 'Category not permitted' })
+  // findOne(
+  //   @Param('id') id: string,
+  //   @CurrentPrincipal() principal: JwtPayload,
+  // ) {
+  //   return this.productService.findOne(id, principal);
+  // }
 
-  @Get('code/:code')
-  @RequireScopes('product:read:*')
-  @ApiOperation({ summary: 'Detail produk by kode produk' })
-  @ApiParam({ name: 'code', description: 'Kode produk (case-insensitive)' })
-  @ApiResponse({ status: 200, type: ProductResponseDto })
-  findByCode(
-    @Param('code') code: string,
-    @CurrentPrincipal() principal: JwtPayload,
-  ) {
-    return this.productService.findByCode(code, principal);
-  }
+  // @Get('code/:code')
+  // @RequireScopes('product:read:*')
+  // @ApiOperation({ summary: 'Detail produk by kode produk' })
+  // @ApiParam({ name: 'code', description: 'Kode produk (case-insensitive)' })
+  // @ApiResponse({ status: 200, type: ProductResponseDto })
+  // findByCode(
+  //   @Param('code') code: string,
+  //   @CurrentPrincipal() principal: JwtPayload,
+  // ) {
+  //   return this.productService.findByCode(code, principal);
+  // }
 }
