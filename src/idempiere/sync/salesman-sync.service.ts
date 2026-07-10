@@ -59,7 +59,6 @@ export class SalesmanSyncService extends BaseSyncService {
             syncedAt: new Date(),
           };
 
-          this.logger.debug(`Processing salesman id=${record.id} value=${record.AD_User}`);
           if (existing) {
             const hasChange =
               existing.name              !== data.name              ||
