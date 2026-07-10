@@ -63,9 +63,37 @@ export interface IdempiereSalesmanRecord extends IdempiereRecord {
   Name: string;
   Name2?: string;
   IsSalesRep: string;
-  IsActive: string;
+  IsActive: boolean;
   C_BP_Group_ID?: { id: number; identifier: string };
   AD_User?: IdempiereAdUser[];
+  Updated: string;
+  Created: string;
+}
+export interface IdempiereCBPLocationRecord {
+  id: number;
+  uid: string;
+  Name: string;
+  C_Location_ID?: { 
+    id: number; 
+    identifier: string 
+    Address2: string;
+    Address3: string;
+    Address4: string;
+    C_Country_ID?: { id: number; identifier: string };
+    City: string;
+    Postal: string;
+  };
+  Arcode: string;
+  IsActive: boolean;
+}
+export interface IdempiereRetailerRecord extends IdempiereRecord {
+  Value: string;
+  Name: string;
+  Name2?: string;
+  IsCustomer?: boolean;
+  IsActive: boolean;
+  C_BP_Group_ID?: { id: number; identifier: string };
+  C_BPartner_Location?: IdempiereCBPLocationRecord[];
   Updated: string;
   Created: string;
 }

@@ -19,6 +19,7 @@ import { ApiAuditLog } from './database/entities/api-audit-log.entity';
 import { Principal } from './database/entities/principal.entity';
 import { IdempiereModule } from './idempiere/idempiere.module';
 import { SalesmanModule } from './modules/salesman/salesman.module';
+import { RetailerModule } from './modules/retailer/retailer.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SalesmanModule } from './modules/salesman/salesman.module';
     MonitoringModule,
     IdempiereModule,
     SalesmanModule,
+    RetailerModule,
   ],
   providers: [AuditLogMiddleware, RateLimitMiddleware],
 })

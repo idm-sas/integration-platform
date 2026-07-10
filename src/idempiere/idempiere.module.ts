@@ -10,6 +10,8 @@ import { Product } from '../database/entities/product.entity';
 import { ProductCategory } from '../database/entities/product-category.entity';
 import { ProductPrice } from '../database/entities/product-price.entity';
 import { Salesman } from '../database/entities/salesman.entity';
+import { RetailersSyncService } from './sync/retailers-sync.service';
+import { Retailer } from 'src/database/entities/retailers.entity';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { Salesman } from '../database/entities/salesman.entity';
       ProductCategory,
       ProductPrice,
       Salesman,
+      Retailer,
     ]),
   ],
   controllers: [SyncController],
@@ -25,12 +28,14 @@ import { Salesman } from '../database/entities/salesman.entity';
     IdempiereService,
     ProductSyncService,
     SalesmanSyncService,
+    RetailersSyncService,
     SyncOrchestratorService,
   ],
   exports: [
     IdempiereService,
     ProductSyncService,
     SalesmanSyncService,
+    RetailersSyncService,
     SyncOrchestratorService,
   ],
 })

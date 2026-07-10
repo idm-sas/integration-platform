@@ -2,6 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ProductSyncService } from './product-sync.service';
 import { SalesmanSyncService } from './salesman-sync.service';
+import { RetailersSyncService } from './retailers-sync.service';
 import { SyncResult, SyncStatus } from '../interfaces/sync-result.interface';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
   constructor(
     private readonly productSyncService: ProductSyncService,
     private readonly salesmanSyncService: SalesmanSyncService,
+    private readonly retailerSyncService: RetailersSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -76,10 +78,11 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
 
     try {
       // Urutan: category → salesman → product → price
-      results.push(await this.productSyncService.syncCategories('full'));
-      results.push(await this.salesmanSyncService.syncSalesmen('full'));
-      results.push(await this.productSyncService.syncProducts('full'));
-      results.push(await this.productSyncService.syncPrices('full'));
+      // results.push(await this.productSyncService.syncCategories('full'));
+      // results.push(await this.salesmanSyncService.syncSalesmen('full'));
+      results.push(await this.retailerSyncService.syncRetailers('full'));
+      // results.push(await this.productSyncService.syncProducts('full'));
+      // results.push(await this.productSyncService.syncPrices('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -118,10 +121,11 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     const results: SyncResult[] = [];
 
     try {
-      results.push(await this.productSyncService.syncCategories('incremental', since));
-      results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
-      results.push(await this.productSyncService.syncProducts('incremental', since));
-      results.push(await this.productSyncService.syncPrices('incremental', since));
+      // results.push(await this.productSyncService.syncCategories('incremental', since));
+      // results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
+      results.push(await this.retailerSyncService.syncRetailers('incremental', since));
+      // results.push(await this.productSyncService.syncProducts('incremental', since));
+      // results.push(await this.productSyncService.syncPrices('incremental', since));
 
       this.syncStatus.lastIncrementalSync = new Date();
 

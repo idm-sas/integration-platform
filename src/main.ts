@@ -10,6 +10,7 @@ import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
 import { SalesmanModule } from './modules/salesman/salesman.module';
+import { RetailerModule } from './modules/retailer/retailer.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -90,7 +91,7 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, swaggerConfig, {
       // Hanya include module yang relevan untuk principal
-      include: [AuthModule, ProductModule, SalesmanModule],
+      include: [AuthModule, ProductModule, SalesmanModule, RetailerModule],
       extraModels: [],
     });
 

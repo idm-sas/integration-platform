@@ -206,4 +206,26 @@ export class IdempiereService {
       },
     );
   }
+
+  async getAllRetailers(): Promise<IdempiereSalesmanRecord[]> {
+    return this.fetchAllPages<IdempiereSalesmanRecord>(
+      '/api/v1/models/c_bpartner',
+      {
+        '$filter': "IsCustomer eq true and IsActive eq true",
+        '$expand': 'C_BPartner_Location',
+        '$orderby': 'Value asc',
+      },
+    );
+  }
+
+  async getUpdatedRetailers(since: Date): Promise<IdempiereSalesmanRecord[]> {
+    return this.fetchUpdatedSince<IdempiereSalesmanRecord>(
+      '/api/v1/models/c_bpartner',
+      since,
+      {
+        '$filter': "IsCustomer eq true",
+        '$expand': 'C_BPartner_Location',
+      },
+    );
+  }
 }
