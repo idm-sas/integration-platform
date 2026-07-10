@@ -45,3 +45,27 @@ export interface IdempierePriceRecord extends IdempiereRecord {
   IsActive: string;
   Updated: string;
 }
+export interface IdempiereAdUser {
+  id: number;
+  uid: string;
+  Name: string;
+  Description?: string;
+  EMail?: string;
+  Value?: string;
+  Birthday?: string;
+  Phone?: string;
+  C_Job_ID?: { id: number; identifier: string };
+  ContactDescription?: string;
+  IsActive: boolean;
+}
+export interface IdempiereSalesmanRecord extends IdempiereRecord {
+  Value: string;
+  Name: string;
+  Name2?: string;
+  IsSalesRep: string;
+  IsActive: string;
+  C_BP_Group_ID?: { id: number; identifier: string };
+  AD_User?: IdempiereAdUser[];
+  Updated: string;
+  Created: string;
+}
