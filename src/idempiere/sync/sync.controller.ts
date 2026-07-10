@@ -1,6 +1,6 @@
 import { Controller, Post, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ProductSyncService } from './product-sync.service';
+import { SyncOrchestratorService } from '../sync/sync-orchestrator.service';
 import { AccessTokenGuard } from '../../auth/guards/access-token.guard';
 import { ScopeGuard } from '../../auth/guards/scope.guard';
 import { RequireScopes } from '../../common/decorators/require-scopes.decorator';
@@ -11,7 +11,7 @@ import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
 @UseGuards(AccessTokenGuard, ScopeGuard)
 @Controller('api/v1/sync')
 export class SyncController {
-  constructor(private readonly syncService: ProductSyncService) {}
+  constructor(private readonly orchestrator: SyncOrchestratorService) {}
 
   @Get('status')
   @RequireScopes('product:sync:*')
@@ -22,7 +22,7 @@ export class SyncController {
   getStatus() {
     return {
       message: SUCCESS_MESSAGE.FETCH,
-      data: this.syncService.getStatus(),
+      data: this.orchestrator.getStatus(),
     };
   }
 
@@ -32,12 +32,11 @@ export class SyncController {
   @ApiOperation({
     summary: 'Trigger full sync manual',
     description:
-      'Sync ulang semua data (category → product → price) dari iDempiere ke MiddleDB.\n\n' +
+      'Sync ulang semua data (category → salesman → product → price) dari iDempiere ke MiddleDB.\n\n' +
       '⚠️ Berjalan di background. Pantau progress via `GET /api/v1/sync/status`.',
   })
-  @ApiResponse({ status: 200, description: 'Full sync started in background' })
   triggerFullSync() {
-    this.syncService.runFullSync().catch((err) =>
+    this.orchestrator.runFullSync().catch((err) =>
       console.error('Background full sync error:', err),
     );
 
@@ -57,9 +56,8 @@ export class SyncController {
     summary: 'Trigger incremental sync manual',
     description: 'Sync hanya data yang berubah sejak sync terakhir.',
   })
-  @ApiResponse({ status: 200, description: 'Incremental sync started in background' })
   triggerIncrementalSync() {
-    this.syncService.runIncrementalSync().catch((err) =>
+    this.orchestrator.runIncrementalSync().catch((err) =>
       console.error('Background incremental sync error:', err),
     );
 

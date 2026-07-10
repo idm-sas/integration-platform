@@ -6,6 +6,7 @@ import {
   IdempiereProductRecord,
   IdempiereCategoryRecord,
   IdempierePriceRecord,
+  IdempiereSalesmanRecord,
 } from './interfaces/idempiere-response.interface';
 
 @Injectable()
@@ -181,6 +182,28 @@ export class IdempiereService {
       '/api/v1/models/m_productprice',
       since,
       { '$expand': 'M_Product_ID,M_PriceList_Version_ID' },
+    );
+  }
+
+  async getAllSalesmen(): Promise<IdempiereSalesmanRecord[]> {
+    return this.fetchAllPages<IdempiereSalesmanRecord>(
+      '/api/v1/models/c_bpartner',
+      {
+        '$filter': "IsSalesRep eq true and IsActive eq true",
+        '$expand': 'AD_User',
+        '$orderby': 'Value asc',
+      },
+    );
+  }
+
+  async getUpdatedSalesmen(since: Date): Promise<IdempiereSalesmanRecord[]> {
+    return this.fetchUpdatedSince<IdempiereSalesmanRecord>(
+      '/api/v1/models/c_bpartner',
+      since,
+      {
+        '$filter': "IsSalesRep eq true",
+        '$expand': 'AD_User',
+      },
     );
   }
 }
