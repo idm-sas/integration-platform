@@ -24,11 +24,11 @@ export class RetailerService {
       })
       .orderBy('retailers.name', 'ASC');
 
-    if (allowedCodes !== null && allowedCodes.length > 0) {
-      qb.andWhere('LOWER(retailers.value) IN (:...codes)', {
-        codes: allowedCodes.map((c) => c.toLowerCase()),
-      });
-    }
+    // if (allowedCodes !== null && allowedCodes.length > 0) {
+    //   qb.andWhere('LOWER(retailers.value) IN (:...codes)', {
+    //     codes: allowedCodes.map((c) => c.toLowerCase()),
+    //   });
+    // }
 
     const retailers = await qb.getMany();
 

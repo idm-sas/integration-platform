@@ -21,11 +21,11 @@ export class SalesmanService {
       .where('salesman.bpGroup = :bpGroup', { bpGroup: 'SALES SIGNIFY' })
       .orderBy('salesman.name', 'ASC');
 
-    if (allowedCodes !== null && allowedCodes.length > 0) {
-      qb.andWhere('LOWER(salesman.code) IN (:...codes)', {
-        codes: allowedCodes.map((c) => c.toLowerCase()),
-      });
-    }
+    // if (allowedCodes !== null && allowedCodes.length > 0) {
+    //   qb.andWhere('LOWER(salesman.value) IN (:...codes)', {
+    //     codes: allowedCodes.map((c) => c.toLowerCase()),
+    //   });
+    // }
 
     const salesmans = await qb.getMany();
 
