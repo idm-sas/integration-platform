@@ -7,6 +7,8 @@ import {
   IdempiereCategoryRecord,
   IdempierePriceRecord,
   IdempiereSalesmanRecord,
+  IdempiereWarehouseRecord,
+  IdempiereLocatorRecord,
 } from './interfaces/idempiere-response.interface';
 
 @Injectable()
@@ -226,6 +228,44 @@ export class IdempiereService {
         '$filter': "IsCustomer eq true",
         '$expand': 'C_BPartner_Location',
       },
+    );
+  }
+
+  async getAllWarehouses(): Promise<IdempiereWarehouseRecord[]> {
+    return this.fetchAllPages<IdempiereWarehouseRecord>(
+      '/api/v1/models/m_warehouse',
+      {
+        '$filter': 'IsActive eq true',
+        '$orderby': 'Value asc',
+      },
+    );
+  }
+
+  async getUpdatedWarehouses(since: Date): Promise<IdempiereWarehouseRecord[]> {
+    return this.fetchUpdatedSince<IdempiereWarehouseRecord>(
+      '/api/v1/models/m_warehouse',
+      since,
+    );
+  }
+
+  // ─── Locators ─────────────────────────────────────────────────────────────────
+
+  async getAllLocators(): Promise<IdempiereLocatorRecord[]> {
+    return this.fetchAllPages<IdempiereLocatorRecord>(
+      '/api/v1/models/m_locator',
+      {
+        '$expand': 'M_Warehouse_ID',
+        '$filter': 'IsActive eq true',
+        '$orderby': 'M_Warehouse_ID asc',
+      },
+    );
+  }
+
+  async getUpdatedLocators(since: Date): Promise<IdempiereLocatorRecord[]> {
+    return this.fetchUpdatedSince<IdempiereLocatorRecord>(
+      '/api/v1/models/m_locator',
+      since,
+      { '$expand': 'M_Warehouse_ID' },
     );
   }
 }

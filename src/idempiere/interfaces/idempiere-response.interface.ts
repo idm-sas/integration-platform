@@ -97,3 +97,23 @@ export interface IdempiereRetailerRecord extends IdempiereRecord {
   Updated: string;
   Created: string;
 }
+export interface IdempiereWarehouseRecord extends IdempiereRecord {
+  Value: string;
+  Name: string;
+  Description?: string;
+  IsActive: boolean | string;
+  Updated: string;
+  Created: string;
+}
+
+export interface IdempiereLocatorRecord extends IdempiereRecord {
+  Value: string;
+  X?: string;   // Aisle
+  Y?: string;   // Bin
+  Z?: string;   // Level
+  IsDefault: boolean | string;
+  IsActive: boolean | string;
+  M_Warehouse_ID: { id: number; identifier: string };
+  Updated: string;
+  Created: string;
+}

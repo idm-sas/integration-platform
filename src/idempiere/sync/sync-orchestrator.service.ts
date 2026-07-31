@@ -4,6 +4,7 @@ import { ProductSyncService } from './product-sync.service';
 import { SalesmanSyncService } from './salesman-sync.service';
 import { RetailersSyncService } from './retailers-sync.service';
 import { SyncResult, SyncStatus } from '../interfaces/sync-result.interface';
+import { WarehouseSyncService } from './warehouse-sync.service';
 
 @Injectable()
 export class SyncOrchestratorService implements OnApplicationBootstrap {
@@ -20,6 +21,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     private readonly productSyncService: ProductSyncService,
     private readonly salesmanSyncService: SalesmanSyncService,
     private readonly retailerSyncService: RetailersSyncService,
+    private readonly warehouseSyncService: WarehouseSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -80,6 +82,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       // Urutan: category → salesman → product → price
       results.push(await this.productSyncService.syncCategories('full'));
       results.push(await this.salesmanSyncService.syncSalesmen('full'));
+      results.push(await this.warehouseSyncService.syncWarehouses('full'));
+      results.push(await this.warehouseSyncService.syncLocators('full'));
       results.push(await this.retailerSyncService.syncRetailers('full'));
       results.push(await this.productSyncService.syncProducts('full'));
       results.push(await this.productSyncService.syncPrices('full'));
@@ -123,6 +127,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     try {
       results.push(await this.productSyncService.syncCategories('incremental', since));
       results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
+      results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
+      results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
       results.push(await this.retailerSyncService.syncRetailers('incremental', since));
       results.push(await this.productSyncService.syncProducts('incremental', since));
       results.push(await this.productSyncService.syncPrices('incremental', since));
