@@ -32,7 +32,7 @@ export class InventoryController {
   ) {}
 
   @Get('snapshot')
-  @RequireScopes('inventory:read')
+  // @RequireScopes('inventory:read')
   @ApiOperation({
     summary: 'Inventory Snapshot',
     description:
