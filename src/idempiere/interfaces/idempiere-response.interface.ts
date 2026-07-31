@@ -111,6 +111,7 @@ export interface IdempiereLocatorRecord extends IdempiereRecord {
   X?: string;   // Aisle
   Y?: string;   // Bin
   Z?: string;   // Level
+  priorityNo?: number;
   IsDefault: boolean | string;
   IsActive: boolean | string;
   M_Warehouse_ID: { id: number; identifier: string };
