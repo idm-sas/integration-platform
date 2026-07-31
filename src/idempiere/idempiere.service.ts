@@ -10,6 +10,7 @@ import {
   IdempiereWarehouseRecord,
   IdempiereLocatorRecord,
   IdempiereStorageOnHandRecord,
+  SecondarySalesInvoiceRecord,
 } from './interfaces/idempiere-response.interface';
 
 @Injectable()
@@ -280,4 +281,76 @@ export class IdempiereService {
       },
     );
   }
+
+  async getSecondarySalesInvoices(filter: {
+  dateFrom?: string;
+  dateTo?: string;
+  salesman?: number;
+  invoiceNo?: string;
+}): Promise<any[]> {
+
+  return this.fetchAllPages<any>(
+    '/api/v1/models/c_invoice',
+    {
+      $expand: 'c_invoiceline',
+      $filter: this.buildInvoiceFilter(filter),
+      $orderby: 'DateInvoiced desc',
+    },
+  );
+
+}
+
+private readonly allowedOrgTrxIds = [
+  1000006,
+  1000008,
+  2200020,
+  1000010,
+  2200021,
+  2200022,
+  2200037,
+  2200038,
+  2200034,
+  2200035,
+  2200036,
+  2200033,
+];
+
+private buildInvoiceFilter(filter: {
+  dateFrom?: string;
+  dateTo?: string;
+  salesman?: number;
+  invoiceNo?: string;
+}): string {
+
+  const conditions: string[] = [
+    "DocStatus eq 'CO'",
+    "(C_BPartner_ID eq 2200296 or C_BPartner_ID eq 2204935)",
+    "(DocumentNo eq 'ATR1-FKN-2510-2536' or DocumentNo eq 'CTR1-FKN-1902-0375')",
+  ];
+
+  const orgFilter = this.allowedOrgTrxIds
+    .map(id => `AD_OrgTrx_ID eq ${id}`)
+    .join(' or ');
+
+  conditions.push(`(${orgFilter})`);
+
+
+  if (filter.dateFrom) {
+    conditions.push(`DateInvoiced ge '${filter.dateFrom}'`);
+  }
+
+  if (filter.dateTo) {
+    conditions.push(`DateInvoiced le '${filter.dateTo}'`);
+  }
+
+  if (filter.invoiceNo) {
+    conditions.push(`DocumentNo eq '${filter.invoiceNo}'`);
+  }
+
+  if (filter.salesman) {
+    conditions.push(`SalesRep_ID eq ${filter.salesman}`);
+  }
+
+  return conditions.join(' and ');
+}
 }

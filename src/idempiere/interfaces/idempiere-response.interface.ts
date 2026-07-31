@@ -132,3 +132,69 @@ export interface IdempiereStorageOnHandRecord extends IdempiereRecord {
   // };
   IsActive: boolean | string;
 }
+
+
+export interface SecondarySalesInvoiceRecord {
+
+  orderNo: string;
+
+  invoiceDate: string;
+
+  invoiceNo: string;
+
+  totalGrossValue: number;
+
+  status: string;
+
+  totalDiscount: number;
+
+  totalNetValue: number;
+
+  taxPercent: number;
+
+  taxValue: number;
+
+  totalValue: number;
+
+  totalQuantity: number;
+
+  remark: string | null;
+
+
+  esmErpId: string;
+
+  esmName: string;
+
+
+  retailerErpId: string;
+
+  retailerName: string;
+
+
+  lines: SecondarySalesLineRecord[];
+
+}
+
+
+
+export interface SecondarySalesLineRecord {
+
+  productErpId: string;
+
+  productName: string;
+
+  grossValue: number;
+
+  netValue: number;
+
+  price: number;
+
+  totalValue: number;
+
+  freeQty: number;
+
+  invoicedQuantity: number;
+
+  uom: string;
+
+}
