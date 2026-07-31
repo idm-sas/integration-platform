@@ -140,6 +140,7 @@ export class WarehouseSyncService extends BaseSyncService {
             bin: record.Y || null,
             level: record.Z || null,
             priorityNo: record.PriorityNo || 0,
+            locatorTypeId: record.M_LocatorType_ID?.id,
             isDefault: this.toBoolean(record.IsDefault),
             isActive: this.toBoolean(record.IsActive),
             syncedAt: new Date(),

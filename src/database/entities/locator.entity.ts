@@ -40,6 +40,10 @@ export class Locator {
   @Column({ default: 0 })
   priorityNo: number;
 
+  /** M_Locator.M_LocatorType_ID */
+  @Column({ nullable: false })
+  locatorTypeId: number;
+
   /** M_Locator.IsDefault */
   @Column({ default: false })
   isDefault: boolean;

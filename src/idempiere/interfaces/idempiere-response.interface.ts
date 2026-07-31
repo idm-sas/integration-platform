@@ -118,3 +118,17 @@ export interface IdempiereLocatorRecord extends IdempiereRecord {
   Updated: string;
   Created: string;
 }
+export interface IdempiereStorageOnHandRecord extends IdempiereRecord {
+  M_Product_ID: { id: number; identifier: string };
+  M_Locator_ID?: { id: number; identifier: string };
+  QtyOnHand: number;
+  // QtyReserved: number;
+  // QtyOrdered: number;
+  // M_AttributeSetInstance_ID?: {
+  //   id: number;
+  //   identifier: string;
+  //   Lot?: string;
+  //   Description?: string;
+  // };
+  IsActive: boolean | string;
+}

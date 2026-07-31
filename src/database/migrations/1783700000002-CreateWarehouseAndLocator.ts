@@ -36,6 +36,7 @@ export class CreateWarehouseAndLocator1783700000002 implements MigrationInterfac
         "bin"         varchar,
         "level"       varchar,
         "priorityNo"  integer   NOT NULL DEFAULT 0,
+        "locatorTypeId" integer   NOT NULL,
         "isDefault"   boolean   NOT NULL DEFAULT false,
         "isActive"    boolean   NOT NULL DEFAULT true,
         "syncedAt"    TIMESTAMP,

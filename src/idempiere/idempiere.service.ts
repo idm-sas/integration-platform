@@ -9,6 +9,7 @@ import {
   IdempiereSalesmanRecord,
   IdempiereWarehouseRecord,
   IdempiereLocatorRecord,
+  IdempiereStorageOnHandRecord,
 } from './interfaces/idempiere-response.interface';
 
 @Injectable()
@@ -266,6 +267,17 @@ export class IdempiereService {
       '/api/v1/models/m_locator',
       since,
       { '$expand': 'M_Warehouse_ID' },
+    );
+  }
+
+  async getAllStorageOnHand(): Promise<IdempiereStorageOnHandRecord[]> {
+    return this.fetchAllPages<IdempiereStorageOnHandRecord>(
+      '/api/v1/models/m_storageonhand',
+      {
+        '$expand': 'M_Locator_ID',
+        '$orderby': 'M_Locator_ID asc',
+        '$filter': '(M_Product_ID eq 2200736 OR M_Product_ID eq 2200748 OR M_Product_ID eq 2200177)',
+      },
     );
   }
 }

@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
 import { SalesmanModule } from './modules/salesman/salesman.module';
 import { RetailerModule } from './modules/retailer/retailer.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -91,7 +92,7 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, swaggerConfig, {
       // Hanya include module yang relevan untuk principal
-      include: [AuthModule, ProductModule, SalesmanModule, RetailerModule],
+      include: [AuthModule, ProductModule, SalesmanModule, RetailerModule, InventoryModule],
       extraModels: [],
     });
 

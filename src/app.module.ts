@@ -20,6 +20,7 @@ import { Principal } from './database/entities/principal.entity';
 import { IdempiereModule } from './idempiere/idempiere.module';
 import { SalesmanModule } from './modules/salesman/salesman.module';
 import { RetailerModule } from './modules/retailer/retailer.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { RetailerModule } from './modules/retailer/retailer.module';
     IdempiereModule,
     SalesmanModule,
     RetailerModule,
+    InventoryModule,
   ],
   providers: [AuditLogMiddleware, RateLimitMiddleware],
 })
