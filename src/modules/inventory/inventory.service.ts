@@ -228,7 +228,7 @@ export class InventoryService {
 
           productCode: product.code,
 
-          sapProductCode: null,
+          sapProductCode: product.partner_code ?? null,
 
           stockQuantityInStdUnit: 0,
 

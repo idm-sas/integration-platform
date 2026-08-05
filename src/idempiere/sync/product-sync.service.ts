@@ -139,6 +139,7 @@ export class ProductSyncService extends BaseSyncService {
             code: record.Value || '',
             name: record.Name || '',
             description: record.Description || null,
+            partner_code: record.SKU || null,
             uom: record.C_UOM_ID?.Name || null,
             uomId: record.C_UOM_ID?.id || null,
             isActive: this.toBoolean(record.IsActive),
@@ -152,6 +153,7 @@ export class ProductSyncService extends BaseSyncService {
               existing.name       !== data.name       ||
               existing.code       !== data.code       ||
               existing.isActive   !== data.isActive   ||
+              existing.partner_code !== data.partner_code ||
               existing.categoryId !== data.categoryId;
 
             if (hasChange) {

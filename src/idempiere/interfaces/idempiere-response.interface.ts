@@ -19,6 +19,7 @@ export interface IdempiereProductRecord extends IdempiereRecord {
   Name: string;
   Description?: string;
   IsActive: string;
+  SKU: string;
   C_UOM_ID?: { id: number; Name: string };
   M_Product_Category_ID?: { id: number; Name: string };
   Group1?: { id: string; identifier: string };

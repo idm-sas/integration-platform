@@ -277,7 +277,7 @@ export class IdempiereService {
       {
         '$expand': 'M_Locator_ID',
         '$orderby': 'M_Locator_ID asc',
-        '$filter': '(M_Product_ID eq 2200736 OR M_Product_ID eq 2200748 OR M_Product_ID eq 2200177)',
+        '$filter': '(M_Product_ID eq 2200424 OR M_Product_ID eq 2200748 OR M_Product_ID eq 2218959 OR M_Product_ID eq 2211072 OR M_Product_ID eq 2217522)',
       },
     );
   }
