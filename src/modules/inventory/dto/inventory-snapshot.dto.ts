@@ -19,6 +19,8 @@ export class InventorySnapshotItemDto {
     nullable: true,
   })
   batchNo: string | null;
+
+  @ApiProperty()
   DateInventory: string | null;
 
   constructor(partial: Partial<InventorySnapshotItemDto>) {
