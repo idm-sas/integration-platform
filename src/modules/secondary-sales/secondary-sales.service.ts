@@ -460,7 +460,7 @@ export class SecondarySalesService {
                  */
 
                 productId:
-                  product.id,
+                  product.code,
 
                 /**
                  * Nama Product dari database
