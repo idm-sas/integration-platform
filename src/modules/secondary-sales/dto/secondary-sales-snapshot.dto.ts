@@ -10,6 +10,9 @@ export class SecondarySalesLineDto {
   @ApiProperty()
   productName: string;
 
+  @ApiProperty()
+  SAPProductCode: string;
+
 
   @ApiProperty()
   grossValue: number;
@@ -26,6 +29,11 @@ export class SecondarySalesLineDto {
   @ApiProperty()
   totalValue: number;
 
+  @ApiProperty()
+  discount1Code: string;
+
+  @ApiProperty()
+  discount1Percent: number;
 
   @ApiProperty()
   freeQty: number;
@@ -50,7 +58,11 @@ export class SecondarySalesLineDto {
 
 
 export class SecondarySalesInvoiceDto {
+  @ApiProperty()
+  sellerErpId: string;
 
+  @ApiProperty()
+  sellerName: string;
 
   @ApiProperty()
   orderNo: string;
@@ -63,7 +75,8 @@ export class SecondarySalesInvoiceDto {
   @ApiProperty()
   invoiceNo: string;
 
-
+  @ApiProperty()
+  warehouseErpId: string;
 
   @ApiProperty()
   totalGrossValue: number;
@@ -108,6 +121,7 @@ export class SecondarySalesInvoiceDto {
   @ApiProperty({
     nullable:true,
   })
+
   remark: string | null;
 
 

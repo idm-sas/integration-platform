@@ -292,7 +292,7 @@ export class IdempiereService {
   return this.fetchAllPages<any>(
     '/api/v1/models/c_invoice',
     {
-      $expand: 'c_invoiceline',
+      $expand: 'c_invoiceline($expand=c_orderline_id),c_order_id,c_bpartner_id,salesrep_id',
       $filter: this.buildInvoiceFilter(filter),
       $orderby: 'DateInvoiced desc',
     },
@@ -325,7 +325,7 @@ private buildInvoiceFilter(filter: {
   const conditions: string[] = [
     "DocStatus eq 'CO'",
     "(C_BPartner_ID eq 2200296 or C_BPartner_ID eq 2204935)",
-    "(DocumentNo eq 'ATR1-FKN-2510-2536' or DocumentNo eq 'CTR1-FKN-1902-0375')",
+    "(DocumentNo eq 'ATR1-FKN-2510-2536' or DocumentNo eq 'ATR1-FKN-2507-2211')",
   ];
 
   const orgFilter = this.allowedOrgTrxIds

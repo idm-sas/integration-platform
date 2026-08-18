@@ -77,17 +77,17 @@ export class SecondarySalesController {
     example: '2026-07-31',
   })
 
-  @ApiQuery({
-    name: 'salesman',
-    required: false,
-    example: 'SM001',
-  })
+  // @ApiQuery({
+  //   name: 'salesman',
+  //   required: false,
+  //   example: 'SM001',
+  // })
 
-  @ApiQuery({
-    name: 'retailer',
-    required: false,
-    example: 'RT001',
-  })
+  // @ApiQuery({
+  //   name: 'retailer',
+  //   required: false,
+  //   example: 'RT001',
+  // })
 
   @ApiResponse({
     status: 200,
