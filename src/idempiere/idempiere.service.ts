@@ -271,16 +271,41 @@ export class IdempiereService {
     );
   }
 
-  async getAllStorageOnHand(): Promise<IdempiereStorageOnHandRecord[]> {
-    return this.fetchAllPages<IdempiereStorageOnHandRecord>(
-      '/api/v1/models/m_storageonhand',
-      {
-        '$expand': 'M_Locator_ID',
-        '$orderby': 'M_Locator_ID asc',
-        '$filter': '(M_Product_ID eq 2200424 OR M_Product_ID eq 2200748 OR M_Product_ID eq 2218959 OR M_Product_ID eq 2211072 OR M_Product_ID eq 2217522)',
-      },
-    );
-  }
+  async getAllStorageOnHand(
+  dateFrom: string,
+  dateTo: string,
+): Promise<IdempiereStorageOnHandRecord[]> {
+
+  const productFilter = `
+    (
+      M_Product_ID eq 2200424
+      OR M_Product_ID eq 2200748
+      OR M_Product_ID eq 2218959
+      OR M_Product_ID eq 2211072
+      OR M_Product_ID eq 2217522
+    )
+  `;
+
+  const dateFilter = `
+    DateMaterialPolicy ge '${dateFrom}'
+    AND DateMaterialPolicy le '${dateTo}'
+  `;
+
+  return this.fetchAllPages<IdempiereStorageOnHandRecord>(
+    '/api/v1/models/m_storageonhand',
+    {
+      '$expand': 'M_Locator_ID',
+      '$orderby': 'M_Locator_ID asc',
+      '$filter': `
+        ${productFilter}
+        AND
+        ${dateFilter}
+      `
+        .replace(/\s+/g, ' ')
+        .trim(),
+    },
+  );
+}
 
   async getSecondarySalesInvoices(filter: {
   dateFrom?: string;

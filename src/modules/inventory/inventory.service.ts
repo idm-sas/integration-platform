@@ -33,6 +33,7 @@ interface InventoryGroup {
   stockQuantityInUnit: number;
 
   batchNo: string | null;
+  DateInventory: string | null;
 }
 
 interface GroupedInventory {
@@ -49,6 +50,7 @@ interface GroupedInventory {
   stockQuantityInUnit: number;
 
   batchNo: string | null;
+  DateInventory: string | null;
 }
 
 @Injectable()
@@ -76,7 +78,10 @@ export class InventoryService {
 
       this.logger.log('Loading inventory snapshot...');
 
-      const stockRecords = await this.loadStorage();
+      const stockRecords = await this.loadStorage(
+    query.dateFrom,
+    query.dateTo,
+  );
 
       const locatorMap = await this.loadLocators();
 
@@ -115,8 +120,12 @@ export class InventoryService {
       };
   }
 
-  private async loadStorage(): Promise<IdempiereStorageOnHandRecord[]> {
-    const stocks = await this.idempiereService.getAllStorageOnHand();
+  private async loadStorage(dateFrom: string, dateTo: string): Promise<IdempiereStorageOnHandRecord[]> {
+    const stocks =
+    await this.idempiereService.getAllStorageOnHand(
+      dateFrom,
+      dateTo,
+    );
 
     this.logger.log(`Storage loaded : ${stocks.length}`);
 
@@ -238,6 +247,8 @@ export class InventoryService {
             stock.M_AttributeSetInstance_ID?.id > 0
               ? String(stock.M_AttributeSetInstance_ID.id)
               : null,
+
+          DateInventory: stock.DateMaterialPolicy ?? null,
         });
 
       }
@@ -307,6 +318,8 @@ export class InventoryService {
         stockQuantityInUnit: row.stockQuantityInUnit,
 
         batchNo: row.batchNo,
+
+        DateInventory:row.DateInventory,
 
       }),
 

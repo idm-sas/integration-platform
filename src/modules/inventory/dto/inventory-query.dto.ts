@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDateString,
   IsInt,
   IsOptional,
   IsString,
@@ -32,19 +33,26 @@ export class InventoryQueryDto {
   @Max(100)
   limit = 20;
 
-  @ApiPropertyOptional({
-    description: 'Warehouse ERP Code',
-    example: 'WH-MAIN-01',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Warehouse ERP Code',
+  //   example: 'WH-MAIN-01',
+  // })
   @IsOptional()
   @IsString()
   warehouse?: string;
 
-  @ApiPropertyOptional({
-    description: 'Product Code',
-    example: 'AB0101000',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Product Code',
+  //   example: 'AB0101000',
+  // })
   @IsOptional()
   @IsString()
   product?: string;
+
+
+  @IsDateString()
+  dateFrom: string;
+
+  @IsDateString()
+  dateTo: string;
 }

@@ -19,6 +19,7 @@ export class InventorySnapshotItemDto {
     nullable: true,
   })
   batchNo: string | null;
+  DateInventory: string | null;
 
   constructor(partial: Partial<InventorySnapshotItemDto>) {
     Object.assign(this, partial);
