@@ -56,18 +56,13 @@ export class SalesmanSyncService extends BaseSyncService {
             positionCodeLevel: 60, // default value, karena iDempiere tidak menyediakan level posisi
             bpGroup: record.C_BP_Group_ID?.identifier || null,
             isActive: this.toBoolean(record.IsActive),
+            createdAt: new Date(record.Created) || new Date(),
+            updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
           };
 
           if (existing) {
-            const hasChange =
-              existing.name              !== data.name              ||
-              existing.name2             !== data.name2             ||
-              existing.email             !== data.email             ||
-              existing.phone             !== data.phone             ||
-              existing.position          !== data.position          ||
-              existing.bpGroup           !== data.bpGroup           ||
-              existing.isActive          !== data.isActive;
+            const hasChange = existing.updatedAt < data.updatedAt;
 
             if (hasChange) {
               await this.salesmanRepo.update(existing.id, data);
