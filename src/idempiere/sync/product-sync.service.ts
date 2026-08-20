@@ -59,14 +59,13 @@ export class ProductSyncService extends BaseSyncService {
             name: record.Name || '',
             description: record.Description || null,
             isActive: this.toBoolean(record.IsActive),
+            createdAt: new Date(record.Created) || new Date(),
+            updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
           };
 
           if (existing) {
-            const hasChange =
-              existing.name     !== data.name     ||
-              existing.code     !== data.code     ||
-              existing.isActive !== data.isActive;
+            const hasChange = existing.updatedAt < data.updatedAt;
 
             if (hasChange) {
               await this.categoryRepo.update(existing.id, data);
@@ -225,15 +224,13 @@ export class ProductSyncService extends BaseSyncService {
               limitPrice: Number(record.PriceLimit || 0),
               currency: 'IDR',
               isActive: this.toBoolean(record.IsActive),
+              createdAt: new Date(record.Created) || new Date(),
+              updatedAt: new Date(record.Updated) || new Date(),
               syncedAt: new Date(),
             };
 
             if (existing) {
-              const hasChange =
-                Number(existing.listPrice)     !== data.listPrice     ||
-                Number(existing.standardPrice) !== data.standardPrice ||
-                Number(existing.limitPrice)    !== data.limitPrice    ||
-                existing.isActive              !== data.isActive;
+               const hasChange = existing.updatedAt < data.updatedAt;
 
               if (hasChange) {
                 await this.priceRepo.update(existing.id, data);
