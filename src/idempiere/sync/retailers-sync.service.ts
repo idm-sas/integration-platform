@@ -67,15 +67,13 @@ export class RetailersSyncService extends BaseSyncService {
             arcode: cBPLocation?.Arcode || null,
             isCustomer: this.toBoolean(record.IsCustomer),
             isActive: this.toBoolean(record.IsActive),
+            createdAt: new Date(record.Created) || new Date(),
+            updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
           };
 
           if (existing) {
-            const hasChange =
-              existing.value             !== data.value             ||
-              existing.name              !== data.name              ||
-              existing.bpGroup           !== data.bpGroup           ||
-              existing.isActive          !== data.isActive;
+            const hasChange = existing.updatedAt < data.updatedAt;
 
             if (hasChange) {
               await this.retailerRepo.update(existing.id, data);
