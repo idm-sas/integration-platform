@@ -145,16 +145,13 @@ export class ProductSyncService extends BaseSyncService {
             isActive: this.toBoolean(record.IsActive),
             group2: record.Group2?.identifier || null,
             categoryId: category.id,
+            createdAt: new Date(record.Created) || new Date(),
+            updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
           };
 
           if (existing) {
-            const hasChange =
-              existing.name       !== data.name       ||
-              existing.code       !== data.code       ||
-              existing.isActive   !== data.isActive   ||
-              existing.partner_code !== data.partner_code ||
-              existing.categoryId !== data.categoryId;
+            const hasChange = existing.updatedAt < data.updatedAt;
 
             if (hasChange) {
               await this.productRepo.update(existing.id, data);

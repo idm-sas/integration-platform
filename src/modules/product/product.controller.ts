@@ -48,15 +48,15 @@ export class ProductController {
   //   return this.productService.findOne(id, principal);
   // }
 
-  // @Get('code/:code')
-  // @RequireScopes('product:read:*')
-  // @ApiOperation({ summary: 'Detail produk by kode produk' })
-  // @ApiParam({ name: 'code', description: 'Kode produk (case-insensitive)' })
-  // @ApiResponse({ status: 200, type: ProductResponseDto })
-  // findByCode(
-  //   @Param('code') code: string,
-  //   @CurrentPrincipal() principal: JwtPayload,
-  // ) {
-  //   return this.productService.findByCode(code, principal);
-  // }
+  @Get('code/:code')
+  @RequireScopes('product:read:*')
+  @ApiOperation({ summary: 'Detail produk by kode produk' })
+  @ApiParam({ name: 'code', description: 'Kode produk (case-insensitive)' })
+  @ApiResponse({ status: 200, type: ProductResponseDto })
+  findByCode(
+    @Param('code') code: string,
+    @CurrentPrincipal() principal: JwtPayload,
+  ) {
+    return this.productService.findByCode(code, principal);
+  }
 }
