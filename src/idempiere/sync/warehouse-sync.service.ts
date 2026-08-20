@@ -143,18 +143,13 @@ export class WarehouseSyncService extends BaseSyncService {
             locatorTypeId: record.M_LocatorType_ID?.id,
             isDefault: this.toBoolean(record.IsDefault),
             isActive: this.toBoolean(record.IsActive),
+            createdAt: new Date(record.Created) || new Date(),
+            updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
           };
 
           if (existing) {
-            const hasChange =
-              existing.value     !== data.value     ||
-              existing.aisle     !== data.aisle     ||
-              existing.bin       !== data.bin       ||
-              existing.level     !== data.level     ||
-              existing.isDefault !== data.isDefault ||
-              existing.isActive  !== data.isActive  ||
-              existing.priorityNo !== data.priorityNo;
+            const hasChange = existing.updatedAt < data.updatedAt;
 
             if (hasChange) {
               await this.locatorRepo.update(existing.id, data);
