@@ -9,16 +9,18 @@ export class PriceDto {
 
 export class ProductResponseDto {
   @ApiProperty() id: string;
-  @ApiProperty() code: string;
-  @ApiProperty() name: string;
+  @ApiProperty() productId: string;
+  @ApiProperty() productName: string;
+  @ApiProperty() sapProductCode: string;
   @ApiPropertyOptional() description?: string;
   @ApiProperty() uom: string;
-  @ApiProperty() isActive: boolean;
-  @ApiProperty() categoryId: string;
-  @ApiProperty() categoryName: string;
-  @ApiPropertyOptional() group2?: string;
-  @ApiPropertyOptional() imageUrl?: string;
-  @ApiPropertyOptional() partner_code?: string;
+  @ApiProperty() deactivated: boolean;
+  @ApiProperty() category: string;
+  @ApiProperty() categoryERPId: string;
+  @ApiPropertyOptional() category2?: string;
+  @ApiPropertyOptional() image: string;
+  @ApiProperty() createdAt: Date;
+  @ApiProperty() lastUpdateAt: Date;
   @ApiPropertyOptional({ type: [PriceDto] }) prices?: PriceDto[];
   @ApiProperty() syncedAt: Date;
 }
