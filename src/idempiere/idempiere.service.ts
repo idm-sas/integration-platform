@@ -350,7 +350,7 @@ private buildInvoiceFilter(filter: {
   const conditions: string[] = [
     "DocStatus eq 'CO'",
     "(C_BPartner_ID eq 2200296 or C_BPartner_ID eq 2204935)",
-    "(DocumentNo eq 'ATR1-FKN-2510-2536' or DocumentNo eq 'ATR1-FKN-2507-2211')",
+    "(DocumentNo eq 'ATR1-FKN-2602-1124' or DocumentNo eq 'ATR1-FKN-2602-0282')",
   ];
 
   const orgFilter = this.allowedOrgTrxIds

@@ -67,13 +67,15 @@ export class SecondarySalesController {
 
   @ApiQuery({
     name: 'dateFrom',
-    required: false,
+    required: true,
+    type: String,
     example: '2026-07-01',
   })
 
   @ApiQuery({
     name: 'dateTo',
-    required: false,
+    required: true,
+    type: String,
     example: '2026-07-31',
   })
 
