@@ -23,7 +23,7 @@ async function seed() {
     process.exit(0);
   }
 
-  const secret = await bcrypt.hash('secret_signify_2026', 12);
+  const secret = await bcrypt.hash('Sgnf!y_7Kp#29Lm@Qx8R', 12);
 
    const principals = await principalRepo.save([
     {
