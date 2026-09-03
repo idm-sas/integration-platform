@@ -80,7 +80,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
 
     try {
       // Urutan: category → salesman → product → price
-      // results.push(await this.productSyncService.syncCategories('full'));
+      results.push(await this.productSyncService.syncCategories('full'));
       results.push(await this.salesmanSyncService.syncSalesmen('full'));
       // results.push(await this.warehouseSyncService.syncWarehouses('full'));
       // results.push(await this.warehouseSyncService.syncLocators('full'));
@@ -126,7 +126,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     const results: SyncResult[] = [];
 
     try {
-      // results.push(await this.productSyncService.syncCategories('incremental', since));
+      results.push(await this.productSyncService.syncCategories('incremental', since));
       results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
       // results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
       // results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
