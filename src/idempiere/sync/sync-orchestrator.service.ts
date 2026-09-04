@@ -86,8 +86,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       // results.push(await this.warehouseSyncService.syncLocators('full'));
       // results.push(await this.retailerSyncService.syncRetailers('full'));
       // results.push(await this.retailerSyncService.syncRetailerRules('full'));
-      // results.push(await this.productSyncService.syncProducts('full'));
-      // results.push(await this.productSyncService.syncPrices('full'));
+      results.push(await this.productSyncService.syncProducts('full'));
+      results.push(await this.productSyncService.syncPrices('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -132,8 +132,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       // results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
       // results.push(await this.retailerSyncService.syncRetailers('incremental', since));
       // results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
-      // results.push(await this.productSyncService.syncProducts('incremental', since));
-      // results.push(await this.productSyncService.syncPrices('incremental', since));
+      results.push(await this.productSyncService.syncProducts('incremental', since));
+      results.push(await this.productSyncService.syncPrices('incremental', since));
 
       this.syncStatus.lastIncrementalSync = new Date();
 
