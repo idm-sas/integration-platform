@@ -82,8 +82,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       // Urutan: category → salesman → product → price
       results.push(await this.productSyncService.syncCategories('full'));
       results.push(await this.salesmanSyncService.syncSalesmen('full'));
-      // results.push(await this.warehouseSyncService.syncWarehouses('full'));
-      // results.push(await this.warehouseSyncService.syncLocators('full'));
+      results.push(await this.warehouseSyncService.syncWarehouses('full'));
+      results.push(await this.warehouseSyncService.syncLocators('full'));
       // results.push(await this.retailerSyncService.syncRetailers('full'));
       // results.push(await this.retailerSyncService.syncRetailerRules('full'));
       results.push(await this.productSyncService.syncProducts('full'));
@@ -128,8 +128,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     try {
       results.push(await this.productSyncService.syncCategories('incremental', since));
       results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
-      // results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
-      // results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
+      results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
+      results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
       // results.push(await this.retailerSyncService.syncRetailers('incremental', since));
       // results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
       results.push(await this.productSyncService.syncProducts('incremental', since));
