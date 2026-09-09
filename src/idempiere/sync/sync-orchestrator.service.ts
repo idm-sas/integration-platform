@@ -84,8 +84,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.salesmanSyncService.syncSalesmen('full'));
       results.push(await this.warehouseSyncService.syncWarehouses('full'));
       results.push(await this.warehouseSyncService.syncLocators('full'));
-      // results.push(await this.retailerSyncService.syncRetailers('full'));
-      // results.push(await this.retailerSyncService.syncRetailerRules('full'));
+      results.push(await this.retailerSyncService.syncRetailers('full'));
+      results.push(await this.retailerSyncService.syncRetailerRules('full'));
       results.push(await this.productSyncService.syncProducts('full'));
       results.push(await this.productSyncService.syncPrices('full'));
 
@@ -130,8 +130,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
       results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
       results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
-      // results.push(await this.retailerSyncService.syncRetailers('incremental', since));
-      // results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
+      results.push(await this.retailerSyncService.syncRetailers('incremental', since));
+      results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
       results.push(await this.productSyncService.syncProducts('incremental', since));
       results.push(await this.productSyncService.syncPrices('incremental', since));
 

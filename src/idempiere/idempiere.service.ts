@@ -229,7 +229,7 @@ export class IdempiereService {
       '/api/v1/models/c_bpartner',
       since,
       {
-        '$filter': "IsCustomer eq true",
+        '$filter': "IsCustomer eq true and IsVendor eq false",
         '$expand': 'C_BPartner_Location',
       },
     );

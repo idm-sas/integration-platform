@@ -77,16 +77,16 @@ export class RetailerService {
     const limit = query.limit || 20;
 
     const qb = this.buildRetailerQuery(includeRules);
-
-    // Exclude retailer Luar Area and arcode is not null
-    qb.andWhere("retailer.name NOT LIKE '[LA]%'")
-      .andWhere("retailer.location NOT LIKE '[LA]%'")
-      .andWhere('salesman.bpGroup = :bpGroup', { bpGroup: 'SALES SIGNIFY' })
-      .andWhere("retailer.arcode IS NOT NULL");
-
+    
     // Filter by allowed categories dari scope token
     if (allowedCats !== null && allowedCats.length > 0) {
-      qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats });
+      qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats })
+        .andWhere("retailer.name NOT LIKE '[LA]%'")
+        .andWhere("retailer.location NOT LIKE '[LA]%'")
+        .andWhere('salesman.bpGroup = :bpGroup', { bpGroup: 'SALES SIGNIFY' })
+        .andWhere("retailer.arcode IS NOT NULL")
+        .andWhere("retailer.isSyncToIntegration = true")
+        .andWhere("retailer.isBillTo = true");
     }
 
     if (query.isActive !== undefined) {

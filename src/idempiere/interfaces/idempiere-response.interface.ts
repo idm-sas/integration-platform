@@ -84,8 +84,11 @@ export interface IdempiereCBPLocationRecord {
     City: string;
     Postal: string;
   };
-  Arcode: string;
+  ExternalReference: string;
   IsActive: boolean;
+  IsShipTo: boolean;
+  IsBillTo: boolean;
+  IsMainArcode: boolean;
 }
 export interface IdempiereRetailerRecord extends IdempiereRecord {
   Value: string;
@@ -97,6 +100,8 @@ export interface IdempiereRetailerRecord extends IdempiereRecord {
   C_BPartner_Location?: IdempiereCBPLocationRecord[];
   Updated: string;
   Created: string;
+  Arcode: string;
+  IsSyncToIntegration: boolean;
 }
 export interface IdempiereRetailerRulesRecord extends IdempiereRecord {
   C_BPartner_ID: { id: number; identifier: string };

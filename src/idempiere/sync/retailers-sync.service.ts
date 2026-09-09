@@ -73,12 +73,16 @@ export class RetailersSyncService extends BaseSyncService {
             subcity: cBPLocation?.C_Location_ID?.Address4 || null,
             country: cBPLocation?.C_Location_ID?.C_Country_ID?.identifier || null,
             postal: cBPLocation?.C_Location_ID?.Postal || null,
-            arcode: cBPLocation?.Arcode || null,
+            arcode: cBPLocation?.ExternalReference || null,
             isCustomer: this.toBoolean(record.IsCustomer),
             isActive: this.toBoolean(record.IsActive),
             createdAt: new Date(record.Created) || new Date(),
             updatedAt: new Date(record.Updated) || new Date(),
             syncedAt: new Date(),
+            isSyncToIntegration: this.toBoolean(record.IsSyncToIntegration),
+            isShipTo: this.toBoolean(cBPLocation?.IsShipTo),
+            isBillTo: this.toBoolean(cBPLocation?.IsBillTo),
+            isMainArcode: this.toBoolean(cBPLocation?.IsMainArcode),
           };
 
           if (existing) {

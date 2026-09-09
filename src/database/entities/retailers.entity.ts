@@ -81,4 +81,16 @@ export class Retailer {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: false })
+  isSyncToIntegration: boolean;
+
+  @Column({ default: false })
+  isShipTo: boolean;
+
+  @Column({ default: false })
+  isBillTo: boolean;
+
+  @Column({ default: false })
+  isMainArcode: boolean;
 }
