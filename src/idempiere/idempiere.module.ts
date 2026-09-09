@@ -12,6 +12,7 @@ import { ProductPrice } from '../database/entities/product-price.entity';
 import { Salesman } from '../database/entities/salesman.entity';
 import { RetailersSyncService } from './sync/retailers-sync.service';
 import { Retailer } from 'src/database/entities/retailers.entity';
+import { RetailerRules } from 'src/database/entities/retailer-rules.entity';
 import { Warehouse } from '../database/entities/warehouse.entity';
 import { Locator } from '../database/entities/locator.entity';
 import { WarehouseSyncService } from './sync/warehouse-sync.service';
@@ -24,6 +25,7 @@ import { WarehouseSyncService } from './sync/warehouse-sync.service';
       ProductPrice,
       Salesman,
       Retailer,
+      RetailerRules,
       Warehouse,
       Locator,
     ]),

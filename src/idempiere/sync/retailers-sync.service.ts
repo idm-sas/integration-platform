@@ -3,9 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IdempiereService } from '../idempiere.service';
 import { Retailer } from '../../database/entities/retailers.entity';
-import { IdempiereRetailerRecord } from '../interfaces/idempiere-response.interface';
+import { RetailerRules } from '../../database/entities/retailer-rules.entity';
+import { IdempiereRetailerRecord, IdempiereRetailerRulesRecord } from '../interfaces/idempiere-response.interface';
 import { SyncResult } from '../interfaces/sync-result.interface';
 import { BaseSyncService } from './base-sync.service';
+import { ProductCategory } from 'src/database/entities/product-category.entity';
+import { Salesman } from 'src/database/entities/salesman.entity';
 
 @Injectable()
 export class RetailersSyncService extends BaseSyncService {
@@ -14,6 +17,12 @@ export class RetailersSyncService extends BaseSyncService {
   constructor(
     @InjectRepository(Retailer)
     private readonly retailerRepo: Repository<Retailer>,
+    @InjectRepository(RetailerRules)
+    private readonly retailerRuleRepo: Repository<RetailerRules>,
+    @InjectRepository(Salesman)
+    private readonly salesmanRepo: Repository<Salesman>,
+    @InjectRepository(ProductCategory)
+    private readonly categoryRepo: Repository<ProductCategory>,
     private readonly idempiereService: IdempiereService,
   ) {
     super();
@@ -93,6 +102,152 @@ export class RetailersSyncService extends BaseSyncService {
     } catch (err) {
       result.error = err.message;
       this.logger.error('Retailer sync error', err.message);
+    }
+
+    result.durationMs = Date.now() - startTime;
+    this.logResult(result);
+    return result;
+  }
+
+  async syncRetailerRules(
+    strategy: 'full' | 'incremental',
+    since?: Date,
+  ): Promise<SyncResult> {
+    const startTime = Date.now();
+    const result = this.createResult('RetailerRules', strategy);
+
+    try {
+      const records: IdempiereRetailerRulesRecord[] =
+        strategy === 'full'
+          ? await this.idempiereService.getAllRetailerRules()
+          : await this.idempiereService.getUpdatedRetailerRules(since!);
+
+      result.total = records.length;
+      this.logger.log(`Syncing ${records.length} retailer rules (${strategy})...`);
+
+      for (const record of records) {
+        try {
+          this.logger.debug(
+            `Processing RetailerRule iDempiereId=${record.id}`,
+          );
+
+          const retailerIdempiereId = record.C_BPartner_ID?.id;
+          const salesmanIdempiereId = record.SalesRep_ID?.C_BPartner_ID?.id;
+          const categoryIdempiereId = record.M_Product_Category_ID?.id;
+
+          this.logger.debug(
+            `IDs: retailer=${retailerIdempiereId}, salesman=${salesmanIdempiereId}, category=${categoryIdempiereId}`,
+          );
+
+          if (!retailerIdempiereId) {
+            this.logger.warn(`Skip ${record.id}: retailer ID kosong`);
+            result.skipped++;
+            continue;
+          }
+
+          if (!salesmanIdempiereId) {
+            this.logger.warn(`Skip ${record.id}: salesman ID kosong`);
+            result.skipped++;
+            continue;
+          }
+
+          if (!categoryIdempiereId) {
+            this.logger.warn(`Skip ${record.id}: category ID kosong`);
+            result.skipped++;
+            continue;
+          }
+
+          const retailer = await this.retailerRepo.findOne({
+            where: {
+              idempiereId: retailerIdempiereId,
+            },
+          });
+
+          if (!retailer) {
+            this.logger.warn(
+              `Skip ${record.id}: retailer idempiereId=${retailerIdempiereId} tidak ditemukan`,
+            );
+            result.skipped++;
+            continue;
+          }
+
+          const salesman = await this.salesmanRepo.findOne({
+            where: {
+              idempiereId: salesmanIdempiereId,
+            },
+          });
+
+          if (!salesman) {
+            this.logger.warn(
+              `Skip ${record.id}: salesman idempiereId=${salesmanIdempiereId} tidak ditemukan`,
+            );
+            result.skipped++;
+            continue;
+          }
+
+          const category = await this.categoryRepo.findOne({
+            where: {
+              idempiereId: categoryIdempiereId,
+            },
+          });
+
+          if (!category) {
+            this.logger.warn(
+              `Skip ${record.id}: category idempiereId=${categoryIdempiereId} tidak ditemukan`,
+            );
+            result.skipped++;
+            continue;
+          }
+
+          const existing = await this.retailerRuleRepo.findOne({
+            where: {
+              idempiereId: record.id,
+            },
+          });
+
+          const data: Partial<RetailerRules> = {
+            idempiereId: record.id,
+            orgTrx: record.AD_OrgTrx_ID?.identifier || '',
+            retailerId: retailer.id,
+            salesmanId: salesman.id,
+            creditLimit: record.SO_CreditLimit || 0,
+            categoryId: category.id,
+            paymentTerm: record.C_PaymentTerm_ID?.identifier || '',
+            isActive: this.toBoolean(record.IsActive),
+            createdAt: record.Created
+              ? new Date(record.Created)
+              : new Date(),
+            updatedAt: record.Updated
+              ? new Date(record.Updated)
+              : new Date(),
+            syncedAt: new Date(),
+          };
+
+          this.logger.debug(
+            `Saving RetailerRule ${record.id}: ${JSON.stringify(data)}`,
+          );
+
+          if (existing) {
+            const updatedAt = data.updatedAt!;
+
+            if (existing.updatedAt < updatedAt) {
+              await this.retailerRuleRepo.update(existing.id, data);
+              result.updated++;
+            } else {
+              result.skipped++;
+            }
+          } else {
+            await this.retailerRuleRepo.save(data);
+            result.created++;
+          }
+        } catch (err) {
+          this.logger.error(`Failed retailer rule id=${record.id}: ${err.message}`);
+          result.failed++;
+        }
+      }
+    } catch (err) {
+      result.error = err.message;
+      this.logger.error('RetailerRules sync error', err.message);
     }
 
     result.durationMs = Date.now() - startTime;

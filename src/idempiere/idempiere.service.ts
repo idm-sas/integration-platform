@@ -11,6 +11,8 @@ import {
   IdempiereLocatorRecord,
   IdempiereStorageOnHandRecord,
   SecondarySalesInvoiceRecord,
+  IdempiereRetailerRecord,
+  IdempiereRetailerRulesRecord,
 } from './interfaces/idempiere-response.interface';
 
 @Injectable()
@@ -211,25 +213,44 @@ export class IdempiereService {
     );
   }
 
-  async getAllRetailers(): Promise<IdempiereSalesmanRecord[]> {
-    return this.fetchAllPages<IdempiereSalesmanRecord>(
+  async getAllRetailers(): Promise<IdempiereRetailerRecord[]> {
+    return this.fetchAllPages<IdempiereRetailerRecord>(
       '/api/v1/models/c_bpartner',
       {
-        '$filter': "IsCustomer eq true and IsActive eq true",
+        '$filter': "IsCustomer eq true and IsActive eq true and IsVendor eq false",
         '$expand': 'C_BPartner_Location',
         '$orderby': 'Value asc',
       },
     );
   }
 
-  async getUpdatedRetailers(since: Date): Promise<IdempiereSalesmanRecord[]> {
-    return this.fetchUpdatedSince<IdempiereSalesmanRecord>(
+  async getUpdatedRetailers(since: Date): Promise<IdempiereRetailerRecord[]> {
+    return this.fetchUpdatedSince<IdempiereRetailerRecord>(
       '/api/v1/models/c_bpartner',
       since,
       {
         '$filter': "IsCustomer eq true",
         '$expand': 'C_BPartner_Location',
       },
+    );
+  }
+
+  async getAllRetailerRules(): Promise<IdempiereRetailerRulesRecord[]> {
+    return this.fetchAllPages<IdempiereRetailerRulesRecord>(
+      '/api/v1/models/sas_bprule',
+      {
+        '$expand': 'SalesRep_ID',
+        '$filter': "IsActive eq true",
+        '$orderby': 'C_BPartner_ID asc',
+      },
+    );
+  }
+
+  async getUpdatedRetailerRules(since: Date): Promise<IdempiereRetailerRulesRecord[]> {
+    return this.fetchUpdatedSince<IdempiereRetailerRulesRecord>(
+      '/api/v1/models/sas_bprule',
+      since,
+      { '$expand': 'SalesRep_ID' },
     );
   }
 

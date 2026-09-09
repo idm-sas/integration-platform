@@ -98,6 +98,18 @@ export interface IdempiereRetailerRecord extends IdempiereRecord {
   Updated: string;
   Created: string;
 }
+export interface IdempiereRetailerRulesRecord extends IdempiereRecord {
+  C_BPartner_ID: { id: number; identifier: string };
+  AD_OrgTrx_ID: { id: number; identifier: string };
+  SO_CreditLimit: number;
+  SalesRep_ID: { C_BPartner_ID: { id: number; identifier: string } };
+  C_PaymentTerm_ID: { id: number; identifier: string };
+  M_Product_Category_ID: { id: number; identifier: string };
+  IsAllowNegotiation: { id: number; identifier: string };
+  IsActive: string;
+  Created: string;
+  Updated: string;
+}
 export interface IdempiereWarehouseRecord extends IdempiereRecord {
   Value: string;
   Name: string;

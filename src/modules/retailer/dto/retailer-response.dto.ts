@@ -6,19 +6,22 @@ export class RetailerResponseDto {
   id: string;
 
   @ApiProperty()
-  value: string;
+  retailerErpId: string;
 
   @ApiProperty()
-  name: string;
+  retailerName: string;
 
   @ApiPropertyOptional({ nullable: true })
-  name2: string | null;
+  retailerName2: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   bpGroup: string | null;
 
   @ApiProperty()
-  location: string;
+  outletErpId: string;
+
+  @ApiProperty()
+  outletName: string;
 
   @ApiPropertyOptional({ nullable: true })
   address: string | null;
@@ -39,14 +42,33 @@ export class RetailerResponseDto {
   country: string | null;
 
   @ApiPropertyOptional({ nullable: true })
-  postal: string | null;
+  beat: string | null;
 
   @ApiPropertyOptional({ nullable: true })
-  arcode: string | null;
+  beatErpId: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  latitude: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  longitude: string | null;
 
   @ApiProperty()
-  isActive: boolean;
+  deactivated: boolean;
+
+  @ApiProperty() createdAt: Date;
+  @ApiProperty() lastUpdateAt: Date;
 
   @ApiPropertyOptional({ nullable: true })
   syncedAt: Date | null;
+}
+
+export class PaginatedRetailerResponseDto {
+  @ApiProperty({ type: [RetailerResponseDto] }) data: RetailerResponseDto[];
+  @ApiProperty() meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }

@@ -1,7 +1,9 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { RetailerRules } from './retailer-rules.entity';
 
 @Entity('retailers')
 export class Retailer {
@@ -67,6 +69,9 @@ export class Retailer {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @OneToMany(() => RetailerRules, (rr) => rr.retailer)
+  rules: RetailerRules[];
 
   @Column({ nullable: true })
   syncedAt: Date;
