@@ -50,7 +50,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
 
   // ─── Scheduled: Incremental tiap 30 menit ────────────────────────────────────
 
-  @Cron('0 */30 * * * *', { name: 'incremental-sync' })
+  @Cron('0 0 */5 * * *', { name: 'incremental-sync' })
   async scheduledIncrementalSync() {
     if (!this.syncStatus.lastFullSync) {
       this.logger.warn('Incremental skipped — waiting for full sync first');
