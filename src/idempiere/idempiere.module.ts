@@ -16,6 +16,8 @@ import { RetailerRules } from 'src/database/entities/retailer-rules.entity';
 import { Warehouse } from '../database/entities/warehouse.entity';
 import { Locator } from '../database/entities/locator.entity';
 import { WarehouseSyncService } from './sync/warehouse-sync.service';
+import { InventoryStock } from 'src/database/entities/inventory-stock.entity';
+import { InventoryStockSyncService } from './sync/inventory-stock-sync.service';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { WarehouseSyncService } from './sync/warehouse-sync.service';
       RetailerRules,
       Warehouse,
       Locator,
+      InventoryStock,
     ]),
   ],
   controllers: [SyncController],
@@ -37,6 +40,7 @@ import { WarehouseSyncService } from './sync/warehouse-sync.service';
     SalesmanSyncService,
     RetailersSyncService,
     WarehouseSyncService,
+    InventoryStockSyncService,
     SyncOrchestratorService,
   ],
   exports: [

@@ -4,33 +4,30 @@ export class InventorySnapshotItemDto {
   @ApiProperty()
   productErpId: string;
 
-  @ApiProperty({
-    nullable: true,
-  })
+  @ApiProperty({ type: String, nullable: true })
   sapProductCode: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   stockQuantityInStdUnit: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   stockQuantityInUnit: number;
 
-  @ApiProperty({
-    nullable: true,
-  })
+  @ApiProperty({ type: String, nullable: true })
   batchNo: string | null;
 
-  @ApiProperty()
-  DateInventory: string | null;
-
-  constructor(partial: Partial<InventorySnapshotItemDto>) {
-    Object.assign(this, partial);
-  }
+  // Service menggunakan Date; saat menjadi JSON akan berupa ISO string.
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+  })
+  dateInventory: string | null;
 }
 
 export class InventorySnapshotWarehouseDto {
-  @ApiProperty()
-  distributorErpId: string;
+  @ApiProperty({ type: String, nullable: true })
+  distributorErpId: string | null;
 
   @ApiProperty()
   warehouseErpId: string;
@@ -38,24 +35,18 @@ export class InventorySnapshotWarehouseDto {
   @ApiProperty()
   warehouseName: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, format: 'date-time' })
   lastUpdatedAt: string;
 
-  @ApiProperty({
-    type: () => [InventorySnapshotItemDto],
-  })
+  @ApiProperty({ type: [InventorySnapshotItemDto] })
   items: InventorySnapshotItemDto[];
-
-  constructor(partial: Partial<InventorySnapshotWarehouseDto>) {
-    Object.assign(this, partial);
-  }
 }
 
 export class InventorySnapshotMetaDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Total warehouse seluruh halaman.' })
   total: number;
 
   @ApiProperty()
@@ -67,21 +58,19 @@ export class InventorySnapshotMetaDto {
   @ApiProperty()
   totalPages: number;
 
-  @ApiProperty()
-  generatedAt: string;
+  @ApiProperty({
+    description: 'Total baris stok seluruh halaman.',
+  })
+  totalItems: number;
 }
 
 export class InventorySnapshotResponseDto {
   @ApiProperty()
   message: string;
 
-  @ApiProperty({
-    type: () => [InventorySnapshotWarehouseDto],
-  })
+  @ApiProperty({ type: [InventorySnapshotWarehouseDto] })
   data: InventorySnapshotWarehouseDto[];
 
-  @ApiProperty({
-    type: InventorySnapshotMetaDto,
-  })
+  @ApiProperty({ type: InventorySnapshotMetaDto })
   meta: InventorySnapshotMetaDto;
 }

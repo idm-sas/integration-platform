@@ -14,6 +14,7 @@ import {
   IdempiereRetailerRecord,
   IdempiereRetailerRulesRecord,
 } from './interfaces/idempiere-response.interface';
+import { ALLOWED_LOCATOR_IDS } from 'src/common/constants/warehouse.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -75,48 +76,108 @@ export class IdempiereService {
 
   // ─── Generic Paginated Fetch ──────────────────────────────────────────────────
 
-  async fetchAllPages<T>(
-    endpoint: string,
-    extraParams: Record<string, any> = {},
-    pageSize = 100,
+ async fetchAllPages<T>(
+  endpoint: string,
+  extraParams: Record<string, any> = {},
+  pageSize = 100,
   ): Promise<T[]> {
+    if (!Number.isSafeInteger(pageSize) || pageSize <= 0) {
+      throw new Error('pageSize harus berupa bilangan bulat positif.');
+    }
+
     const allRecords: T[] = [];
+    const MAX_PAGES = 500;
 
     let skip = 0;
-    let totalRecords = 0;
+    let expectedTotal: number | undefined;
 
-    while (true) {
-      const response = await this.client.get<IdempiereListResponse<T>>(endpoint, {
-        params: {
-          ...this.defaultParams,
-          ...extraParams,
-          '$skip': skip,
-          '$pageSize': pageSize,
-        },
-      });
+    const baseParams: Record<string, any> = {
+      ...this.defaultParams,
+      ...extraParams,
+    };
 
-      const {
-        records,
-        'row-count': rowCount,
-        'skip-records': skipRecords,
-      } = response.data;
+    // Hapus parameter pagination lama agar tidak saling bertentangan.
+    delete baseParams['$page'];
+    delete baseParams['$pageSize'];
+    delete baseParams['$skip'];
+    delete baseParams['$top'];
 
-      totalRecords = rowCount;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const response =
+        await this.client.get<IdempiereListResponse<T>>(endpoint, {
+          params: {
+            ...baseParams,
+            '$skip': skip,
+            '$top': pageSize,
+          },
+        });
+
+      const records = response.data.records;
+      const rawRowCount = response.data['row-count'];
+
+      if (!Array.isArray(records)) {
+        throw new Error(
+          `Response ${endpoint} tidak valid: records bukan array.`,
+        );
+      }
+
+      if (
+        rawRowCount === undefined ||
+        rawRowCount === null ||
+        String(rawRowCount).trim() === ''
+      ) {
+        throw new Error(
+          `Response ${endpoint} tidak memiliki row-count.`,
+        );
+      }
+
+      const rowCount = Number(rawRowCount);
+
+      if (!Number.isSafeInteger(rowCount) || rowCount < 0) {
+        throw new Error(
+          `Response ${endpoint} memiliki row-count tidak valid: ${rawRowCount}`,
+        );
+      }
+
+      if (expectedTotal === undefined) {
+        expectedTotal = rowCount;
+      } else if (rowCount !== expectedTotal) {
+        // Jangan mengembalikan hasil parsial ketika total berubah.
+        throw new Error(
+          `Jumlah data ${endpoint} berubah saat pagination: ` +
+            `${expectedTotal} menjadi ${rowCount}. Jalankan sync ulang.`,
+        );
+      }
 
       allRecords.push(...records);
 
-      this.logger.log(
-        `Skip=${skipRecords} | Fetched=${records.length} | Total=${allRecords.length}/${totalRecords}`,
-      );
-
-      if (allRecords.length >= totalRecords) {
-        break;
+      if (allRecords.length > expectedTotal) {
+        throw new Error(
+          `Pagination ${endpoint} melebihi row-count: ` +
+            `${allRecords.length}/${expectedTotal}.`,
+        );
       }
 
-      skip += pageSize;
+      if (allRecords.length === expectedTotal) {
+        return allRecords;
+      }
+
+      if (records.length === 0) {
+        throw new Error(
+          `Pagination ${endpoint} berhenti sebelum lengkap: ` +
+            `${allRecords.length}/${expectedTotal}.`,
+        );
+      }
+
+      // API bisa membatasi hasil menjadi 100 meskipun diminta 500.
+      skip += records.length;
     }
 
-    return allRecords;
+    // Jangan mengembalikan data parsial sebagai hasil sukses.
+    throw new Error(
+      `Pagination ${endpoint} mencapai MAX_PAGES=${MAX_PAGES}: ` +
+        `${allRecords.length}/${expectedTotal ?? '?'}.`,
+    );
   }
 
   async fetchUpdatedSince<T>(
@@ -293,40 +354,68 @@ export class IdempiereService {
   }
 
   async getAllStorageOnHand(
-  dateFrom: string,
-  dateTo: string,
-): Promise<IdempiereStorageOnHandRecord[]> {
+    dateFrom: string,
+    dateTo: string,
+  ): Promise<IdempiereStorageOnHandRecord[]> {
+    const locatorFilter = ALLOWED_LOCATOR_IDS
+      .map((id) => `M_Locator_ID eq ${id}`)
+      .join(' or ');
 
-  const productFilter = `
-    (
-      M_Product_ID eq 2200424
-      OR M_Product_ID eq 2200748
-      OR M_Product_ID eq 2218959
-      OR M_Product_ID eq 2211072
-      OR M_Product_ID eq 2217522
+    return this.fetchAllPages<IdempiereStorageOnHandRecord>(
+      '/api/v1/models/m_storageonhand',
+      {
+        '$expand': 'M_Locator_ID',
+        '$filter': [
+          `(${locatorFilter})`,
+          `DateMaterialPolicy ge '${dateFrom}'`,
+          `DateMaterialPolicy le '${dateTo}'`,
+        ].join(' and '),
+
+        // Urutan stabil ketika mengambil beberapa halaman.
+        '$orderby': 'M_Locator_ID asc, M_StorageOnHand_ID asc',
+      },
+      100,
+    );
+  }
+
+  async getUpdatedStorageOnHand(
+    since: Date,
+  ): Promise<IdempiereStorageOnHandRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Parameter since wajib berupa Date yang valid.');
+    }
+
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+    const sinceWib = new Date(since.getTime() + WIB_OFFSET_MS);
+
+    const dateFrom = sinceWib.toISOString().slice(0, 10);
+
+    const dateToExclusive = new Date(
+      sinceWib.getTime() + ONE_DAY_MS,
     )
-  `;
+      .toISOString()
+      .slice(0, 10);
 
-  const dateFilter = `
-    DateMaterialPolicy ge '${dateFrom}'
-    AND DateMaterialPolicy le '${dateTo}'
-  `;
+    const locatorFilter = ALLOWED_LOCATOR_IDS
+      .map((id) => `M_Locator_ID eq ${id}`)
+      .join(' or ');
 
-  return this.fetchAllPages<IdempiereStorageOnHandRecord>(
-    '/api/v1/models/m_storageonhand',
-    {
-      '$expand': 'M_Locator_ID',
-      '$orderby': 'M_Locator_ID asc',
-      '$filter': `
-        ${productFilter}
-        AND
-        ${dateFilter}
-      `
-        .replace(/\s+/g, ' ')
-        .trim(),
-    },
-  );
-}
+    return this.fetchAllPages<IdempiereStorageOnHandRecord>(
+      '/api/v1/models/m_storageonhand',
+      {
+        '$expand': 'M_Locator_ID',
+        '$filter': [
+          `(${locatorFilter})`,
+          `DateMaterialPolicy ge '${dateFrom}'`,
+          `DateMaterialPolicy lt '${dateToExclusive}'`,
+        ].join(' and '),
+        '$orderby': 'M_Locator_ID asc, M_StorageOnHand_ID asc',
+      },
+      100,
+    );
+  }
 
   async getSecondarySalesInvoices(filter: {
   dateFrom?: string;

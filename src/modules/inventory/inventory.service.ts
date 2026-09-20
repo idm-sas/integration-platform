@@ -1,56 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-
+import { InventoryStock } from '../../database/entities/inventory-stock.entity';
 import { Product } from '../../database/entities/product.entity';
-import { Locator } from '../../database/entities/locator.entity';
-
 import { JwtPayload } from '../../auth/token.service';
-import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
-
-import { IdempiereService } from '../../idempiere/idempiere.service';
-import { IdempiereStorageOnHandRecord } from '../../idempiere/interfaces/idempiere-response.interface';
-
 import { InventoryQueryDto } from './dto/inventory-query.dto';
+import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
+import { InventorySnapshotResponseDto } from './dto/inventory-snapshot.dto';
+import { EXCLUDED_PRODUCT_GROUPS } from 'src/common/constants/product.constant';
 
-import {
-  InventorySnapshotItemDto,
-  InventorySnapshotWarehouseDto,
-} from './dto/inventory-snapshot.dto';
+type ProductWithStocks = Product & {
+  stocks: InventoryStock[];
+};
 
-interface InventoryGroup {
-  warehouseErpId: number;
-  warehouseCode: string;
-  warehouseName: string;
-
-  productErpId: number;
-  productCode: string;
-
+export interface SnapshotItem {
+  productErpId: string;
   sapProductCode: string | null;
-
   stockQuantityInStdUnit: number;
   stockQuantityInUnit: number;
-
   batchNo: string | null;
-  DateInventory: string | null;
+  dateInventory: string | null;
+}
+interface WarehouseRow {
+  warehouseId: string | number;
+  warehouseName: string;
+  organization: string | null;
 }
 
-interface GroupedInventory {
-  warehouseErpId: number;
-  warehouseCode: string;
+interface WarehouseGroup {
   warehouseName: string;
-
-  productErpId: number;
-  productCode: string;
-
-  sapProductCode: string | null;
-
-  stockQuantityInStdUnit: number;
-  stockQuantityInUnit: number;
-
-  batchNo: string | null;
-  DateInventory: string | null;
+  syncedAt: Date | null;
+  items: Map<string, SnapshotItem>;
 }
 
 @Injectable()
@@ -58,13 +39,11 @@ export class InventoryService {
   private readonly logger = new Logger(InventoryService.name);
 
   constructor(
-    @InjectRepository(Locator)
-    private readonly locatorRepo: Repository<Locator>,
+    @InjectRepository(InventoryStock)
+    private readonly stockRepo: Repository<InventoryStock>,
 
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
-
-    private readonly idempiereService: IdempiereService,
 
     private readonly configService: ConfigService,
   ) {}
@@ -72,287 +51,307 @@ export class InventoryService {
   async getSnapshot(
     query: InventoryQueryDto,
     principal: JwtPayload,
-  ) {
-
-      const generatedAt = new Date().toISOString();
-
-      this.logger.log('Loading inventory snapshot...');
-
-      const stockRecords = await this.loadStorage(
-    query.dateFrom,
-    query.dateTo,
-  );
-
-      const locatorMap = await this.loadLocators();
-
-      const productMap = await this.loadProducts();
-
-      const grouped = this.groupStocks(
-          stockRecords,
-          locatorMap,
-          productMap,
-          query,
-      );
-
-      const warehouses = this.buildWarehouseSnapshot(
-          grouped,
-          generatedAt,
-      );
-
-      const paged = this.paginate(
-          warehouses,
-          query.page,
-          query.limit,
-      );
-
-      return {
-          message: SUCCESS_MESSAGE.FETCH_LIST,
-
-          data: paged.data,
-
-          meta: {
-              total: paged.total,
-              page: query.page,
-              limit: query.limit,
-              totalPages: paged.totalPages,
-              generatedAt,
-          },
-      };
-  }
-
-  private async loadStorage(dateFrom: string, dateTo: string): Promise<IdempiereStorageOnHandRecord[]> {
-    const stocks =
-    await this.idempiereService.getAllStorageOnHand(
+  ): Promise<InventorySnapshotResponseDto> {
+    const {
       dateFrom,
       dateTo,
-    );
+      page = 1,
+      limit = 20,
+    } = query;
 
-    this.logger.log(`Storage loaded : ${stocks.length}`);
+  const allowedCats = this.getAllowedCategories(principal.scopes);
 
-    return stocks;
-  }
-
-  private async loadLocators(): Promise<Map<number, Locator>> {
-
-  const locators = await this.locatorRepo.find({
-      where: {
-        isActive: true,
-        locatorTypeId: 1000000,
-        warehouse: {
-          idempiereId: In([
-            1000000,
-            1000002,
-            1000012,
-            2200056,
-            2200022,
-          ]),
-        },
-      },
-      relations: ['warehouse'],
-    });
+    const generatedAt = new Date().toISOString();
 
     this.logger.log(
-      `Locator loaded : ${locators.length}`,
+      `Inventory snapshot | dateFrom: ${dateFrom} | dateTo: ${dateTo} | page: ${page} | principal: ${principal.sub}`,
     );
 
-    const map = new Map<number, Locator>();
+    // 1. Ambil warehouse yang memiliki stok dan produk
+    // dalam rentang tanggal. Urutkan sebelum pagination.
+    const warehouseQb = this.stockRepo
+      .createQueryBuilder('stock')
+      .innerJoin('stock.warehouse', 'warehouse')
+      .innerJoin('stock.product', 'product')
+      .leftJoin('product.category', 'category')
+      .select('warehouse.id', 'warehouseId')
+      .addSelect('warehouse.name', 'warehouseName')
+      .addSelect('warehouse.organization', 'organization')
+      .distinct(true)
+      .where('stock.dateMaterialPolicy >= :dateFrom', {
+        dateFrom,
+      })
+      .andWhere('stock.dateMaterialPolicy <= :dateTo', {
+        dateTo,
+      });
 
-    for (const locator of locators) {
-      map.set(locator.idempiereId, locator);
-    }
+    this.applyProductAccess(warehouseQb, allowedCats);
 
-    return map;
-  }
+    const warehouseRows = await warehouseQb
+      .orderBy('warehouse.name', 'ASC')
+      .addOrderBy('warehouse.id', 'ASC')
+      .getRawMany<WarehouseRow>();
 
-  private async loadProducts(): Promise<Map<number, Product>> {
+      // Organization kosong tetap dipisah per warehouse.
+      const getOrganizationKey = (warehouse: WarehouseRow): string => {
+        const organization = String(warehouse.organization ?? '').trim();
 
-    const products = await this.productRepo.find({
-      where: {
-        isActive: true,
-        // idempiereId: In([
-        //   2200736
-        // ]),
-      },
-    });
+        return organization
+          ? `org:${organization}`
+          : `warehouse:${warehouse.warehouseId}`;
+      };
 
-    this.logger.log(
-      `Product loaded : ${products.length}`,
-    );
+      const organizationMap = new Map<
+        string,
+        {
+          key: string;
+          name: string;
+          warehouses: WarehouseRow[];
+        }
+      >();
 
-    const map = new Map<number, Product>();
+      for (const warehouse of warehouseRows) {
+        const key = getOrganizationKey(warehouse);
 
-    for (const product of products) {
-      map.set(product.idempiereId, product);
-    }
+        let organization = organizationMap.get(key);
 
-    return map;
-  }
+        if (!organization) {
+          organization = {
+            key,
+            name:
+              String(warehouse.organization ?? '').trim() ||
+              warehouse.warehouseName ||
+              String(warehouse.warehouseId),
+            warehouses: [],
+          };
 
+          organizationMap.set(key, organization);
+        }
 
-  private groupStocks(
-    stocks: IdempiereStorageOnHandRecord[],
-    locatorMap: Map<number, Locator>,
-    productMap: Map<number, Product>,
-    query: InventoryQueryDto,
-  ): InventoryGroup[] {
-
-    const grouped = new Map<string, InventoryGroup>();
-
-    for (const stock of stocks) {
-
-      const locatorId = stock.M_Locator_ID?.id;
-
-      if (!locatorId) {
-        continue;
+        organization.warehouses.push(warehouse);
       }
 
-      const locator = locatorMap.get(locatorId);
-
-      if (!locator) {
-        continue;
-      }
-
-      const warehouse = locator.warehouse;
-
-      const product = productMap.get(stock.M_Product_ID.id);
-
-      if (!product) {
-        continue;
-      }
-
-      const key =
-        `${warehouse.idempiereId}_${product.idempiereId}`;
-
-      if (!grouped.has(key)) {
-
-        grouped.set(key, {
-
-          warehouseErpId: warehouse.idempiereId,
-
-          warehouseCode: warehouse.value,
-
-          warehouseName: warehouse.name,
-
-          productErpId: product.idempiereId,
-
-          productCode: product.code,
-
-          sapProductCode: product.partner_code ?? null,
-
-          stockQuantityInStdUnit: 0,
-
-          stockQuantityInUnit: 0,
-
-          batchNo:
-            stock.M_AttributeSetInstance_ID?.id > 0
-              ? String(stock.M_AttributeSetInstance_ID.id)
-              : null,
-
-          DateInventory: stock.DateMaterialPolicy ?? null,
-        });
-
-      }
-
-      const item = grouped.get(key)!;
-
-      item.stockQuantityInStdUnit += Number(stock.QtyOnHand);
-
-      item.stockQuantityInUnit += Number(stock.QtyOnHand);
-
-    }
-
-    this.logger.log(
-      `Grouped inventory : ${grouped.size}`,
-    );
-
-    return [...grouped.values()];
-  }
-
-
-  private buildWarehouseSnapshot(
-  grouped: GroupedInventory[],
-  generatedAt: string,
-): InventorySnapshotWarehouseDto[] {
-
-  const distributorErpId =
-    this.configService.get<string>('idempiere.clientId') ?? '';
-
-  const warehouses = new Map<number, InventorySnapshotWarehouseDto>();
-
-  for (const row of grouped) {
-
-    if (!warehouses.has(row.warehouseErpId)) {
-
-      warehouses.set(
-        row.warehouseErpId,
-
-        new InventorySnapshotWarehouseDto({
-
-          distributorErpId,
-
-          warehouseErpId: row.warehouseCode,
-
-          warehouseName: row.warehouseName,
-
-          createdAt: generatedAt,
-
-          lastUpdatedAt: generatedAt,
-
-          items: [],
-
-        }),
+      // Urutkan dan lakukan pagination per organization.
+      const organizations = Array.from(organizationMap.values()).sort(
+        (a, b) =>
+          a.name.localeCompare(b.name) || a.key.localeCompare(b.key),
       );
 
+      // Nama variabel dipertahankan agar bagian meta tetap bisa digunakan.
+      // Nilainya sekarang adalah jumlah grup organization.
+      const totalWarehouses = organizations.length;
+
+      const pagedOrganizations = organizations.slice(
+        (page - 1) * limit,
+        page * limit,
+      );
+
+      const warehouseIds = pagedOrganizations.flatMap((organization) =>
+        organization.warehouses.map((warehouse) => warehouse.warehouseId),
+      );
+
+    // 3. Total baris stok seluruh warehouse, bukan hanya
+    // warehouse pada halaman ini.
+    const totalItemsQb = this.stockRepo
+      .createQueryBuilder('stock')
+      .innerJoin('stock.warehouse', 'warehouse')
+      .innerJoin('stock.product', 'product')
+      .leftJoin('product.category', 'category')
+      .where('stock.dateMaterialPolicy >= :dateFrom', {
+        dateFrom,
+      })
+      .andWhere('stock.dateMaterialPolicy <= :dateTo', {
+        dateTo,
+      });
+
+    this.applyProductAccess(totalItemsQb, allowedCats);
+
+    const totalItems = await totalItemsQb.getCount();
+
+    const meta = {
+      total: totalWarehouses,
+      page,
+      limit,
+      totalPages: Math.ceil(totalWarehouses / limit),
+      totalItems,
+    };
+
+    if (warehouseIds.length === 0) {
+      return {
+        message: SUCCESS_MESSAGE.FETCH,
+        data: [],
+        meta,
+      };
     }
 
-    warehouses.get(row.warehouseErpId)!.items.push(
+    // 4. Product sebagai tabel utama.
+    // Map stok ke product.stocks tanpa memerlukan
+    // deklarasi relasi stocks pada entity Product.
+    const productsQb = this.productRepo
+        .createQueryBuilder('product')
+        .leftJoin('product.category', 'category')
+        .leftJoinAndMapMany(
+          'product.stocks',
+          InventoryStock,
+          'stock',
+          `stock.productId = product.id
+          AND stock.dateMaterialPolicy >= :dateFrom
+          AND stock.dateMaterialPolicy <= :dateTo
+          AND stock.warehouseId IN (:...warehouseIds)`,
+          {
+            dateFrom,
+            dateTo,
+            warehouseIds,
+          },
+        )
+        .leftJoinAndSelect('stock.warehouse', 'warehouse')
+        .where('1 = 1');
 
-      new InventorySnapshotItemDto({
+      this.applyProductAccess(productsQb, allowedCats);
 
-        productErpId: row.productCode,
+      const products = (await productsQb
+        .orderBy('product.code', 'ASC')
+        .addOrderBy('product.id', 'ASC')
+        .getMany()) as ProductWithStocks[];
 
-        sapProductCode: row.sapProductCode,
+    // 5. Siapkan group mengikuti urutan pagination warehouse.
+    const warehouseMap = new Map<string, WarehouseGroup>();
+    const warehouseToOrganization = new Map<string, string>();
 
-        stockQuantityInStdUnit: row.stockQuantityInStdUnit,
+    for (const organization of pagedOrganizations) {
+      warehouseMap.set(organization.key, {
+        // organization.name berasal dari string warehouse.organization.
+        warehouseName: organization.name,
+        syncedAt: null,
+        items: new Map<string, SnapshotItem>(),
+      });
 
-        stockQuantityInUnit: row.stockQuantityInUnit,
+      for (const warehouse of organization.warehouses) {
+        warehouseToOrganization.set(
+          String(warehouse.warehouseId),
+          organization.key,
+        );
+      }
+    }
 
-        batchNo: row.batchNo,
+    // 6. Masukkan stok produk ke warehouse terkait.
+    for (const product of products) {
+      for (const stock of product.stocks ?? []) {
+        if (!stock.warehouse) continue;
 
-        DateInventory:row.DateInventory,
+        const organizationKey = warehouseToOrganization.get(
+          String(stock.warehouse.id),
+        );
 
-      }),
+        if (!organizationKey) continue;
 
+        const group = warehouseMap.get(organizationKey);
+
+        if (!group) continue;
+
+        const productCode = product.code?.trim();
+
+        if (!productCode) continue;
+
+        const qty = Number(stock.qtyOnHand ?? 0);
+        const qtyStd = Number(stock.qtyOnHandInUOM ?? 0);
+
+        let item = group.items.get(productCode);
+
+        if (!item) {
+          item = {
+            productErpId: productCode,
+            sapProductCode: product.partner_code ?? null,
+            stockQuantityInStdUnit: 0,
+            stockQuantityInUnit: 0,
+            // Hasil agregasi lintas batch dan tanggal.
+            batchNo: null,
+            dateInventory: stock.dateMaterialPolicy ?? null,
+          };
+
+          group.items.set(productCode, item);
+        }
+
+        item.stockQuantityInUnit += qty;
+        item.stockQuantityInStdUnit += qtyStd;
+
+        const syncedAt = stock.syncedAt
+          ? new Date(stock.syncedAt)
+          : null;
+
+        if (
+          syncedAt &&
+          (!group.syncedAt || syncedAt > group.syncedAt)
+        ) {
+          group.syncedAt = syncedAt;
+        }
+      }
+    }
+
+    // 7. Bentuk response.
+    const data = Array.from(warehouseMap.values()).map((group) => ({
+      distributorErpId: null,
+      warehouseErpId: group.warehouseName,
+      warehouseName: group.warehouseName,
+      createdAt: group.syncedAt?.toISOString() ?? generatedAt,
+      lastUpdatedAt: group.syncedAt?.toISOString() ?? generatedAt,
+      items: Array.from(group.items.values()),
+    }));
+
+    const returnedItems = data.reduce(
+      (total, warehouse) => total + warehouse.items.length,
+      0,
     );
 
+    this.logger.log(
+      `Snapshot | warehouses: ${data.length}/${totalWarehouses} | returnedItems: ${returnedItems} | totalItems: ${totalItems}`,
+    );
+
+    return {
+      message: SUCCESS_MESSAGE.FETCH,
+      data,
+      meta,
+    };
   }
 
-  return [...warehouses.values()];
+  private applyProductAccess<T extends ObjectLiteral>(
+    qb: SelectQueryBuilder<T>,
+    allowedCats: string[] | null,
+  ): SelectQueryBuilder<T> {
+    qb.andWhere('product.group2 NOT IN (:...excludedGroups)', {
+      excludedGroups: EXCLUDED_PRODUCT_GROUPS,
+    });
 
-}
+    // null = akses seluruh kategori.
+    if (allowedCats === null) {
+      return qb;
+    }
 
-  private paginate<T>(
-  data: T[],
-  page: number,
-  limit: number,
-) {
+    const categories = allowedCats
+      .map((category) => category.trim().toLowerCase())
+      .filter(Boolean);
 
-  const total = data.length;
+    // Tidak memiliki kategori yang diizinkan = tidak ada akses.
+    if (categories.length === 0) {
+      qb.andWhere('1 = 0');
+      return qb;
+    }
 
-  const totalPages = Math.ceil(total / limit);
+    qb.andWhere('LOWER(category.name) IN (:...allowedCats)', {
+      allowedCats: categories,
+    });
 
-  return {
+    return qb;
+  }
 
-    data: data.slice(
-      (page - 1) * limit,
-      page * limit,
-    ),
+  private getAllowedCategories(scopes: string[]): string[] | null {
+    if (scopes.includes('product:read:*')) return null;
 
-    total,
-
-    totalPages,
-
-  };
-
-}
+    const allowed: string[] = [];
+    for (const scope of scopes) {
+      const match = scope.match(/^product:read:(.+)$/);
+      if (match) allowed.push(match[1].toLowerCase());
+    }
+    return allowed;
+  }
 }

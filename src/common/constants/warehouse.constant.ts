@@ -1,0 +1,10 @@
+export const ALLOWED_LOCATOR_IDS = [
+  1000000,
+  1000007,
+  1000002,
+  1000013,
+  2200066,
+  2200027,
+];
+export const FULL_SYNC_DATE_FROM = '2026-09-01';
+export const FULL_SYNC_DATE_TO   = '2026-09-20';

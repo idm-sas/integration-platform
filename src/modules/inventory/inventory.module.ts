@@ -2,14 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InventoryController } from './inventory.controller';
 import { InventoryService } from './inventory.service';
-import { IdempiereModule } from '../../idempiere/idempiere.module';
+import { InventoryStock } from '../../database/entities/inventory-stock.entity'; // ← import entity
 import { Product } from '../../database/entities/product.entity';
-import { Locator } from 'src/database/entities/locator.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Locator, Product]),
-    IdempiereModule,
+    TypeOrmModule.forFeature([InventoryStock, Product]),
   ],
   controllers: [InventoryController],
   providers: [InventoryService],

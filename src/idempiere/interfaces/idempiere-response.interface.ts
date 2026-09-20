@@ -118,6 +118,7 @@ export interface IdempiereRetailerRulesRecord extends IdempiereRecord {
 export interface IdempiereWarehouseRecord extends IdempiereRecord {
   Value: string;
   Name: string;
+  AD_Org_ID: { id: number; identifier: string };
   Description?: string;
   IsActive: boolean | string;
   Updated: string;
@@ -137,18 +138,30 @@ export interface IdempiereLocatorRecord extends IdempiereRecord {
   Created: string;
 }
 export interface IdempiereStorageOnHandRecord extends IdempiereRecord {
-  M_Product_ID: { id: number; identifier: string };
-  M_Locator_ID?: { id: number; identifier: string };
+  M_Product_ID: {
+    id: number;
+    identifier: string;
+  };
+  M_Locator_ID: {
+    id: number;
+    identifier: string;
+    Value?: string;
+    M_Warehouse_ID?: {
+      id: number;
+      identifier: string;
+    };
+    M_LocatorType_ID?: { id: number; identifier: string };
+  };
   QtyOnHand: number;
-  // QtyReserved: number;
-  // QtyOrdered: number;
-  // M_AttributeSetInstance_ID?: {
-  //   id: number;
-  //   identifier: string;
-  //   Lot?: string;
-  //   Description?: string;
-  // };
-  IsActive: boolean | string;
+  QtyOnHandInUOM?: number;
+  QtyReserved?: number;
+  QtyOrdered?: number;
+  Created?: string;
+  Updated?: string;
+  DateMaterialPolicy?: string;
+  M_AttributeSetInstance_ID?: {
+    id: number;
+  };
 }
 
 
