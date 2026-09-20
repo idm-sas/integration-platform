@@ -50,9 +50,12 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     return this.syncStatus;
   }
 
-  // ─── Scheduled: Incremental tiap 30 menit ────────────────────────────────────
+  // ─── Scheduled: Incremental tiap jam 6 Jakart ────────────────────────────────────
 
-  @Cron('0 0 */5 * * *', { name: 'incremental-sync' })
+  @Cron('0 0 6 * * *', {
+  name: 'incremental-sync',
+  timeZone: 'Asia/Jakarta',
+})
   async scheduledIncrementalSync() {
     if (!this.syncStatus.lastFullSync) {
       this.logger.warn('Incremental skipped — waiting for full sync first');
