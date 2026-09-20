@@ -86,7 +86,25 @@ export class RetailersSyncService extends BaseSyncService {
           };
 
           if (existing) {
-            const hasChange = existing.updatedAt < data.updatedAt;
+            const hasChange =
+              existing.value                !== data.value                ||
+              existing.name                 !== data.name                 ||
+              existing.name2                !== data.name2                ||
+              existing.bpGroup              !== data.bpGroup              ||
+              existing.location             !== data.location             ||
+              existing.address              !== data.address              ||
+              existing.marketname           !== data.marketname           ||
+              existing.city                 !== data.city                 ||
+              existing.subcity              !== data.subcity              ||
+              existing.country              !== data.country              ||
+              existing.postal               !== data.postal               ||
+              existing.arcode               !== data.arcode               ||
+              existing.isCustomer           !== data.isCustomer           ||
+              existing.isActive             !== data.isActive             ||
+              existing.isSyncToIntegration  !== data.isSyncToIntegration  ||
+              existing.isShipTo             !== data.isShipTo             ||
+              existing.isBillTo             !== data.isBillTo             ||
+              existing.isMainArcode         !== data.isMainArcode;
 
             if (hasChange) {
               await this.retailerRepo.update(existing.id, data);
