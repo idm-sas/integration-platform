@@ -164,68 +164,110 @@ export interface IdempiereStorageOnHandRecord extends IdempiereRecord {
   };
 }
 
+export interface IdempiereSecondarySalesRecord extends IdempiereRecord {
+  // organization
+  AD_Org_ID: {
+    id: number;
+    identifier: string;
+  };
+  AD_OrgTrx_ID: {
+    id: number;
+    identifier: string;
+  };
+  DocumentNo: string;
+  DateInvoiced: string;
+  DocStatus: {
+    id: number;
+    identifier: string;
+  };
+  C_Order_ID?: {
+    id: number;
+    DocumentNo: string;
+    M_Warehouse_ID?: {
+      id: number;
+    } | null;
+  } | null;
 
-export interface SecondarySalesInvoiceRecord {
+  // Lookup retailerErpId ke master retailer lokal
+  C_BPartner_ID: {
+    id: number;
+    Value: string;
+  };
 
-  orderNo: string;
+  // Lookup esmId ke master salesman lokal
+  SalesRep_ID?: {
+    id: number; // AD_User_ID
+    C_BPartner_ID?: {
+      id: number; // Business partner salesman
+    } | null;
+  } | null;
 
-  invoiceDate: string;
+  // Sumber nilai invoice
+  TotalLines: number;
+  GrandTotal: number;
+  IsTaxIncluded: boolean;
 
-  invoiceNo: string;
+  // remark, issotrx, c_doctype_id
+  Description?: string | null;
+  IsSOTrx: boolean;
+  C_DocType_ID: {
+    id: number;
+  };
 
-  totalGrossValue: number;
+  Created: string;
+  Updated: string;
 
-  status: string;
-
-  totalDiscount: number;
-
-  totalNetValue: number;
-
-  taxPercent: number;
-
-  taxValue: number;
-
-  totalValue: number;
-
-  totalQuantity: number;
-
-  remark: string | null;
-
-
-  esmErpId: string;
-
-  esmName: string;
-
-
-  retailerErpId: string;
-
-  retailerName: string;
-
-
-  lines: SecondarySalesLineRecord[];
-
+  // Hasil expand, sesuai nama pada JSON
+  C_InvoiceLine: IdempiereSecondarySalesLineRecord[];
 }
 
+export interface IdempiereSecondarySalesLineRecord
+  extends IdempiereRecord {
+  // Baris keterangan tidak mempunyai produk
+  IsDescription: boolean;
 
+  // Lookup productId ke master produk lokal
+  M_Product_ID?: {
+    id: number;
+  } | null;
 
-export interface SecondarySalesLineRecord {
+  // Sumber grossValue, netValue, price, invoicedQuantity
+  PriceList: number;
+  PriceActual: number;
+  LineNetAmt: number;
+  QtyInvoiced: number;
 
-  productErpId: string;
+  // uom
+  C_UOM_ID: {
+    id: number;
+    identifier: string;
+  };
 
-  productName: string;
+  // Sumber pajak invoice
+  TaxAmt: number;
+  C_Tax_ID?: {
+    id: number;
+  } | null;
 
-  grossValue: number;
+  // Referensi discount1Code
+  SAS_DiscountList_ID?: {
+    id: number;
+    identifier: string;
+  } | null;
 
-  netValue: number;
+  // Sumber discount1Percent dan fallback referensi diskon
+  C_OrderLine_ID?: {
+    id: number;
+    Discount: number;
+    SAS_DiscountList_ID?: {
+      id: number;
+      identifier: string;
+    } | null;
+  } | null;
 
-  price: number;
+  // description
+  Description?: string | null;
 
-  totalValue: number;
-
-  freeQty: number;
-
-  invoicedQuantity: number;
-
-  uom: string;
-
+  Created: string;
+  Updated: string;
 }

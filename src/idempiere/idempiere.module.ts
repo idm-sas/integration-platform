@@ -18,6 +18,9 @@ import { Locator } from '../database/entities/locator.entity';
 import { WarehouseSyncService } from './sync/warehouse-sync.service';
 import { InventoryStock } from 'src/database/entities/inventory-stock.entity';
 import { InventoryStockSyncService } from './sync/inventory-stock-sync.service';
+import { InvoiceLine } from 'src/database/entities/invoice-line.entity';
+import { InvoiceHeader } from 'src/database/entities/invoice-header.entity';
+import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
 
 @Module({
   imports: [
@@ -31,6 +34,8 @@ import { InventoryStockSyncService } from './sync/inventory-stock-sync.service';
       Warehouse,
       Locator,
       InventoryStock,
+      InvoiceHeader,
+      InvoiceLine,
     ]),
   ],
   controllers: [SyncController],
@@ -41,6 +46,7 @@ import { InventoryStockSyncService } from './sync/inventory-stock-sync.service';
     RetailersSyncService,
     WarehouseSyncService,
     InventoryStockSyncService,
+    SecondarySalesSyncService,
     SyncOrchestratorService,
   ],
   exports: [

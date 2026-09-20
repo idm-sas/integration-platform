@@ -10,11 +10,12 @@ import {
   IdempiereWarehouseRecord,
   IdempiereLocatorRecord,
   IdempiereStorageOnHandRecord,
-  SecondarySalesInvoiceRecord,
+  IdempiereSecondarySalesRecord,
   IdempiereRetailerRecord,
   IdempiereRetailerRulesRecord,
 } from './interfaces/idempiere-response.interface';
 import { ALLOWED_LOCATOR_IDS } from 'src/common/constants/warehouse.constant';
+import { ALLOWED_ORGTRX_IDS, ALLOWED_DOCTYPE_IDS } from 'src/common/constants/organization.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -417,75 +418,69 @@ export class IdempiereService {
     );
   }
 
-  async getSecondarySalesInvoices(filter: {
-  dateFrom?: string;
-  dateTo?: string;
-  salesman?: number;
-  invoiceNo?: string;
-}): Promise<any[]> {
+  async getAllSecondarySales(
+    dateFrom: string,
+    dateTo: string,
+  ): Promise<IdempiereSecondarySalesRecord[]> {
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+    const docTypeFilter = ALLOWED_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
 
-  return this.fetchAllPages<any>(
-    '/api/v1/models/c_invoice',
-    {
-      $expand: 'c_invoiceline($expand=c_orderline_id),c_order_id,c_bpartner_id,salesrep_id',
-      $filter: this.buildInvoiceFilter(filter),
-      $orderby: 'DateInvoiced desc',
-    },
-  );
-
-}
-
-private readonly allowedOrgTrxIds = [
-  1000006,
-  1000008,
-  2200020,
-  1000010,
-  2200021,
-  2200022,
-  2200037,
-  2200038,
-  2200034,
-  2200035,
-  2200036,
-  2200033,
-];
-
-private buildInvoiceFilter(filter: {
-  dateFrom?: string;
-  dateTo?: string;
-  salesman?: number;
-  invoiceNo?: string;
-}): string {
-
-  const conditions: string[] = [
-    "DocStatus eq 'CO'",
-    "(C_BPartner_ID eq 2200296 or C_BPartner_ID eq 2204935)",
-    "(DocumentNo eq 'ATR1-FKN-2602-1124' or DocumentNo eq 'ATR1-FKN-2602-0282')",
-  ];
-
-  const orgFilter = this.allowedOrgTrxIds
-    .map(id => `AD_OrgTrx_ID eq ${id}`)
-    .join(' or ');
-
-  conditions.push(`(${orgFilter})`);
-
-
-  if (filter.dateFrom) {
-    conditions.push(`DateInvoiced ge '${filter.dateFrom}'`);
+    return this.fetchAllPages<IdempiereSecondarySalesRecord>(
+      '/api/v1/models/c_invoice',
+      {
+        '$expand': 'C_InvoiceLine($expand=C_OrderLine_ID),C_Order_ID,C_BPartner_ID,SalesRep_ID',
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `DateInvoiced ge '${dateFrom}'`,
+          `DateInvoiced le '${dateTo}'`,
+        ].join(' and '),
+        '$orderby': 'DateInvoiced desc',
+      },
+      100,
+    );
   }
 
-  if (filter.dateTo) {
-    conditions.push(`DateInvoiced le '${filter.dateTo}'`);
-  }
+  async getUpdatedSecondarySales(
+     since: Date,
+  ): Promise<IdempiereSecondarySalesRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Parameter since wajib berupa Date yang valid.');
+    }
 
-  if (filter.invoiceNo) {
-    conditions.push(`DocumentNo eq '${filter.invoiceNo}'`);
-  }
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-  if (filter.salesman) {
-    conditions.push(`SalesRep_ID eq ${filter.salesman}`);
-  }
+    const sinceWib = new Date(since.getTime() + WIB_OFFSET_MS);
 
-  return conditions.join(' and ');
-}
+    const dateFrom = sinceWib.toISOString().slice(0, 10);
+
+    const dateToExclusive = new Date(
+      sinceWib.getTime() + ONE_DAY_MS,
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempiereSecondarySalesRecord>(
+      '/api/v1/models/c_invoice',
+      {
+        '$expand': 'C_InvoiceLine($expand=C_OrderLine_ID),C_Order_ID,C_BPartner_ID,SalesRep_ID',
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `DateInvoiced ge '${dateFrom}'`,
+          `DateInvoiced lt '${dateToExclusive}'`,
+        ].join(' and '),
+        '$orderby': 'DateInvoiced desc',
+      },
+      100,
+    );
+  }
 }

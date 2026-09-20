@@ -6,6 +6,7 @@ import { RetailersSyncService } from './retailers-sync.service';
 import { SyncResult, SyncStatus } from '../interfaces/sync-result.interface';
 import { WarehouseSyncService } from './warehouse-sync.service';
 import { InventoryStockSyncService } from './inventory-stock-sync.service';
+import { SecondarySalesSyncService } from './secondary-sales-sync.service';
 
 @Injectable()
 export class SyncOrchestratorService implements OnApplicationBootstrap {
@@ -24,6 +25,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     private readonly retailerSyncService: RetailersSyncService,
     private readonly warehouseSyncService: WarehouseSyncService,
     private readonly inventoryStockSyncService: InventoryStockSyncService,
+    private readonly secondarySalesSyncService: SecondarySalesSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -94,6 +96,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.productSyncService.syncProducts('full'));
       results.push(await this.productSyncService.syncPrices('full'));
       results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
+      results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -141,6 +144,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.productSyncService.syncProducts('incremental', since));
       results.push(await this.productSyncService.syncPrices('incremental', since));
       results.push(await this.inventoryStockSyncService.syncInventoryStocks('incremental', since));
+      results.push(await this.secondarySalesSyncService.syncSecondarySales('incremental', since));
 
       this.syncStatus.lastIncrementalSync = new Date();
 

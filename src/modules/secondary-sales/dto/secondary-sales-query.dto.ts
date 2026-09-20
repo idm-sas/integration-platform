@@ -1,79 +1,33 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
-  IsInt,
-  IsOptional,
+  IsNotEmpty,
   IsString,
-  Max,
+  IsOptional,
+  IsInt,
   Min,
   IsDateString,
 } from 'class-validator';
-
+import { Type } from 'class-transformer';
 
 export class SecondarySalesQueryDto {
-
-
-  @ApiPropertyOptional({
-    description: 'Page number',
-    example: 1,
-    default: 1,
-  })
-  @Type(() => Number)
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  page = 1;
-
-
-
-  @ApiPropertyOptional({
-    description: 'Items per page',
-    example: 20,
-    default: 20,
-  })
-  @Type(() => Number)
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit = 20;
-
+  // ── Mandatory ──────────────────────────────────────────────────────────────
+  @IsDateString()
+  @IsNotEmpty()
+  dateFrom!: string;
 
   @IsDateString()
-  dateFrom: string;
+  @IsNotEmpty()
+  dateTo!: string;
 
-  @IsDateString()
-  dateTo: string;
-
-
-
-//   @ApiPropertyOptional({
-//   description: 'Salesman iDempiere ID',
-//   example: 2200152,
-// })
-@Type(() => Number)
-@IsOptional()
-@IsInt()
-salesman?: number;
-
-
-
-  // @ApiPropertyOptional({
-  //   description: 'Retailer ERP Code',
-  //   example: 'RT001',
-  // })
+  // ── Opsional ───────────────────────────────────────────────────────────────
   @IsOptional()
-  @IsString()
-  retailer?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
 
-
-
-  // @ApiPropertyOptional({
-  //   description: 'Invoice number',
-  //   example: 'INV-000123',
-  // })
   @IsOptional()
-  @IsString()
-  invoiceNo?: string;
-
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number = 20;
 }
