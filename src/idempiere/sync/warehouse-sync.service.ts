@@ -52,6 +52,7 @@ export class WarehouseSyncService extends BaseSyncService {
           const data: Partial<Warehouse> = {
             idempiereId: record.id,
             value: record.Value || '',
+            organization: record.AD_Org_ID?.identifier || '',
             name: record.Name || '',
             description: record.Description || null,
             isActive: this.toBoolean(record.IsActive),
@@ -61,6 +62,7 @@ export class WarehouseSyncService extends BaseSyncService {
           if (existing) {
             const hasChange =
               existing.value       !== data.value       ||
+              existing.organization !== data.organization ||
               existing.name        !== data.name        ||
               existing.description !== data.description ||
               existing.isActive    !== data.isActive;

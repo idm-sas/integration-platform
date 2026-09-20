@@ -13,6 +13,9 @@ export class Warehouse {
   @Column({ unique: true })
   idempiereId: number;
 
+  @Column({ nullable: true })
+  organization: string;
+
   /** M_Warehouse.Value */
   @Column({ unique: true })
   value: string;
