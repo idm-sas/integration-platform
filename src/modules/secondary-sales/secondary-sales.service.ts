@@ -14,6 +14,7 @@ import {
 
 import { InvoiceHeader } from '../../database/entities/invoice-header.entity';
 import { InvoiceLine } from '../../database/entities/invoice-line.entity';
+import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
 
 @Injectable()
 export class SecondarySalesService {
@@ -33,6 +34,7 @@ export class SecondarySalesService {
     query: SecondarySalesQueryDto,
     principal: JwtPayload,
   ): Promise<SecondarySalesSnapshotResponseDto> {
+    const allowedCats = this.getAllowedCategories(principal.scopes);
     const generatedAt = new Date().toISOString();
     const page  = query.page  ?? 1;
     const limit = query.limit ?? 20;
@@ -56,12 +58,39 @@ export class SecondarySalesService {
 
     // Ambil lines untuk semua header sekaligus (hindari N+1)
     const headerIds = headers.map((h) => h.id);
+
+    const lineQb = this.lineRepo
+      .createQueryBuilder('line')
+      .innerJoinAndSelect('line.product', 'product');
+
+    if (headerIds.length > 0) {
+      lineQb.where('line.invoiceHeaderId IN (:...ids)', {
+        ids: headerIds,
+      });
+
+      if (EXCLUDED_PRODUCT_GROUPS.length > 0) {
+        lineQb.andWhere('product.group2 NOT IN (:...excludedGroups)', {
+          excludedGroups: EXCLUDED_PRODUCT_GROUPS,
+        });
+      }
+
+      // Filter kategori berdasarkan scope token.
+      // Asumsi: null = semua kategori, [] = tidak ada akses.
+      if (allowedCats !== null) {
+        if (allowedCats.length > 0) {
+          lineQb
+            .innerJoin('product.category', 'category')
+            .andWhere('LOWER(category.name) IN (:...cats)', {
+              cats: allowedCats.map((cat) => cat.toLowerCase()),
+            });
+        } else {
+          lineQb.andWhere('1 = 0');
+        }
+      }
+    }
+
     const lines = headerIds.length > 0
-      ? await this.lineRepo
-          .createQueryBuilder('line')
-          .innerJoinAndSelect('line.product', 'product')
-          .where('line.invoiceHeaderId IN (:...ids)', { ids: headerIds })
-          .getMany()
+      ? await lineQb.getMany()
       : [];
 
     // Group lines by invoiceHeaderId
@@ -183,5 +212,16 @@ export class SecondarySalesService {
       invoicedQuantity: Number(line.invoicedQuantity),
       uom:              line.uom,
     });
+  }
+
+  private getAllowedCategories(scopes: string[]): string[] | null {
+    if (scopes.includes('product:read:*')) return null;
+
+    const allowed: string[] = [];
+    for (const scope of scopes) {
+      const match = scope.match(/^product:read:(.+)$/);
+      if (match) allowed.push(match[1].toLowerCase());
+    }
+    return allowed;
   }
 }

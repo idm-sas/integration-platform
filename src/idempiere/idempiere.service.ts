@@ -468,6 +468,10 @@ export class IdempiereService {
     const orgTrxFilter = ALLOWED_ORGTRX_IDS
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
+    
+    const docTypeFilter = ALLOWED_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
 
     return this.fetchAllPages<IdempiereSecondarySalesRecord>(
       '/api/v1/models/c_invoice',
@@ -475,6 +479,7 @@ export class IdempiereService {
         '$expand': 'C_InvoiceLine($expand=C_OrderLine_ID),C_Order_ID,C_BPartner_ID,SalesRep_ID',
         '$filter': [
           `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
           `DateInvoiced ge '${dateFrom}'`,
           `DateInvoiced lt '${dateToExclusive}'`,
         ].join(' and '),
