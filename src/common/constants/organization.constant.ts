@@ -14,7 +14,7 @@ export const ALLOWED_ORGTRX_IDS = [
 ];
 export const ALLOWED_DOCTYPE_IDS = [
   1000002,
-  550296,
+  1000003,
   1000042,
   1000043
 ];
