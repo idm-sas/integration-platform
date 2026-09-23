@@ -15,6 +15,7 @@ import {
 import { InvoiceHeader } from '../../database/entities/invoice-header.entity';
 import { InvoiceLine } from '../../database/entities/invoice-line.entity';
 import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
+import { ALLOWED_DOCTYPE_IDS } from '../../common/constants/organization.constant';
 
 @Injectable()
 export class SecondarySalesService {
@@ -143,7 +144,9 @@ export class SecondarySalesService {
     });
 
     // ── Filter retailer ───────────────────────────────────────────────────
-    qb.andWhere("header.c_doctype_id IN (1000002,1000003,1000042,1000043)")
+    qb.andWhere('header.c_doctype_id NOT IN (:...includeDocType)', {
+          includeDocType: ALLOWED_DOCTYPE_IDS,
+        })
       .andWhere("retailer.name NOT LIKE '[LA]%'")
       .andWhere("retailer.location NOT LIKE '[LA]%'")
       .andWhere('retailer.arcode IS NOT NULL');
