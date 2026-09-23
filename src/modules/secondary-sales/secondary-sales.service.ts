@@ -128,28 +128,34 @@ export class SecondarySalesService {
       .createQueryBuilder('header')
       .innerJoinAndSelect('header.retailer', 'retailer')
       .innerJoinAndSelect('header.salesman', 'salesman')
-      .innerJoinAndSelect('header.warehouse', 'warehouse');
+      .innerJoinAndSelect('header.warehouse', 'warehouse')
+      .where('header.invoiceDate >= :dateFrom', {
+        dateFrom: query.dateFrom,
+      })
+      .andWhere('header.invoiceDate <= :dateTo', {
+        dateTo: query.dateTo,
+      })
+      .andWhere('salesman.bpGroup = :bpGroup', {
+        bpGroup: 'SALES SIGNIFY',
+      });
 
-    // ── Filter tanggal (mandatory) ────────────────────────────────────────
-    qb.andWhere('header.invoiceDate >= :dateFrom', {
-      dateFrom: query.dateFrom,
-    });
-    qb.andWhere('header.invoiceDate <= :dateTo', {
-      dateTo: query.dateTo,
-    });
+    if (ALLOWED_DOCTYPE_IDS.length > 0) {
+      qb.andWhere('header.c_doctype_id IN (:...allowedDocTypes)', {
+        allowedDocTypes: ALLOWED_DOCTYPE_IDS,
+      });
+    } else {
+      qb.andWhere('1 = 0');
+    }
 
-    // ── Filter salesman berdasarkan bpGroup ───────────────────────────────
-    qb.andWhere('salesman.bpGroup = :bpGroup', {
-      bpGroup: 'SALES SIGNIFY',
-    });
-
-    // ── Filter retailer ───────────────────────────────────────────────────
-    qb.andWhere('header.c_doctype_id NOT IN (:...includeDocType)', {
-          includeDocType: ALLOWED_DOCTYPE_IDS,
-        })
-      .andWhere("retailer.name NOT LIKE '[LA]%'")
-      .andWhere("retailer.location NOT LIKE '[LA]%'")
-      .andWhere('retailer.arcode IS NOT NULL');
+    qb.andWhere(
+      '(retailer.name IS NULL OR retailer.name NOT LIKE :excludedPrefix)',
+      { excludedPrefix: '[LA]%' },
+    )
+      .andWhere(
+        '(retailer.location IS NULL OR retailer.location NOT LIKE :excludedPrefix)',
+      )
+      .andWhere('retailer.arcode IS NOT NULL')
+      .andWhere("TRIM(retailer.arcode) <> ''");
 
     return qb;
   }
