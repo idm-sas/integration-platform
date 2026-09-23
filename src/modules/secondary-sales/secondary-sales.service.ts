@@ -148,11 +148,11 @@ export class SecondarySalesService {
     }
 
     qb.andWhere(
-      '(retailer.name IS NULL OR retailer.name NOT LIKE :excludedPrefix)',
+      '(retailer.name NOT LIKE :excludedPrefix)',
       { excludedPrefix: '[LA]%' },
     )
       .andWhere(
-        '(retailer.location IS NULL OR retailer.location NOT LIKE :excludedPrefix)',
+        '(retailer.location NOT LIKE :excludedPrefix)',
       )
       .andWhere('retailer.arcode IS NOT NULL')
       .andWhere("TRIM(retailer.arcode) <> ''");
