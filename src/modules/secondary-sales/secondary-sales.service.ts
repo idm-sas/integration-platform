@@ -143,7 +143,8 @@ export class SecondarySalesService {
     });
 
     // ── Filter retailer ───────────────────────────────────────────────────
-    qb.andWhere("retailer.name NOT LIKE '[LA]%'")
+    qb.andWhere("header.c_doctype_id IN (1000002,1000003,1000042,1000043)")
+      .andWhere("retailer.name NOT LIKE '[LA]%'")
       .andWhere("retailer.location NOT LIKE '[LA]%'")
       .andWhere('retailer.arcode IS NOT NULL');
 
