@@ -63,7 +63,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
     since?: Date,
   ): Promise<SyncResult> {
     const startTime = Date.now();
-    const result = this.createResult('InventoryStock', strategy);
+    const result = this.createResult('SecondarySales', strategy);
 
     try {
       const records: IdempiereSecondarySalesRecord[] =

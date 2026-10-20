@@ -46,7 +46,7 @@ export class StockAdjustmentSyncService extends BaseSyncService {
 
     // Sesuaikan nama kategori ini dengan tipe pada createResult().
     // Nama lama dipertahankan agar tidak mengasumsikan union type baru.
-    const result = this.createResult('InventoryStock', strategy);
+    const result = this.createResult('StockAdjustment', strategy);
 
     try {
       let records: IdempiereStockAdjustmentRecord[];
