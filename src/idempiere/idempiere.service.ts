@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import {
   IdempiereListResponse,
   IdempiereProductRecord,
@@ -13,9 +13,14 @@ import {
   IdempiereSecondarySalesRecord,
   IdempiereRetailerRecord,
   IdempiereRetailerRulesRecord,
+  IdempiereStockAdjustmentRecord,
 } from './interfaces/idempiere-response.interface';
-import { ALLOWED_LOCATOR_IDS } from 'src/common/constants/warehouse.constant';
+import { ALLOWED_LOCATOR_IDS, ALLOWED_WAREHOUSE_IDS } from 'src/common/constants/warehouse.constant';
 import { FULL_SYNC_DATE_FROM, ALLOWED_ORGTRX_IDS, ALLOWED_DOCTYPE_IDS } from 'src/common/constants/organization.constant';
+import {
+  ALLOWED_DOCTYPE_IDS as STOCK_ADJ_ALLOWED_DOCTYPE_IDS,
+  FULL_SYNC_DATE_FROM as STOCK_ADJ_FULL_SYNC_DATE_FROM,
+} from 'src/common/constants/stock-adjustment.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -75,6 +80,95 @@ export class IdempiereService {
     }
   }
 
+  private async getWithRetry<T>(
+    endpoint: string,
+    params: Record<string, any>,
+  ): Promise<AxiosResponse<T>> {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await this.client.get<T>(endpoint, { params });
+      } catch (error: unknown) {
+        if (!axios.isAxiosError(error)) {
+          throw error;
+        }
+
+        const status = error.response?.status;
+
+        const retryableStatus =
+          status !== undefined &&
+          [429, 502, 503, 504].includes(status);
+
+        const retryableNetworkError =
+          !error.response &&
+          ['ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EAI_AGAIN']
+            .includes(error.code ?? '');
+
+        if (
+          (!retryableStatus && !retryableNetworkError) ||
+          attempt === maxAttempts
+        ) {
+          throw error;
+        }
+
+        // Default: tunggu 60 detik, lalu 120 detik.
+        let waitMs = 60_000 * attempt;
+
+        // Hormati Retry-After berupa detik atau HTTP date.
+        const retryAfter = error.response?.headers?.['retry-after'];
+
+        if (retryAfter !== undefined && retryAfter !== null) {
+          const value = String(retryAfter).trim();
+          const seconds = Number(value);
+
+          if (value !== '' && Number.isFinite(seconds) && seconds >= 0) {
+            waitMs = Math.max(waitMs, seconds * 1000);
+          } else {
+            const retryAt = Date.parse(value);
+
+            if (Number.isFinite(retryAt)) {
+              waitMs = Math.max(waitMs, retryAt - Date.now());
+            }
+          }
+        }
+
+        // Respons Cloudflare Anda juga memiliki retry_after pada body.
+        const body = error.response?.data as
+          | { retry_after?: unknown }
+          | undefined;
+
+        const bodyRetryAfter = body?.retry_after;
+
+        if (
+          typeof bodyRetryAfter === 'number' ||
+          typeof bodyRetryAfter === 'string'
+        ) {
+          const seconds = Number(bodyRetryAfter);
+
+          if (Number.isFinite(seconds) && seconds >= 0) {
+            waitMs = Math.max(waitMs, seconds * 1000);
+          }
+        }
+
+        this.logger.warn(
+          `Retry GET ${endpoint} | ` +
+          `status=${status ?? error.code ?? 'unknown'} | ` +
+          `nextAttempt=${attempt + 1}/${maxAttempts} | ` +
+          `wait=${Math.ceil(waitMs / 1000)}s | ` +
+          `skip=${params['$skip'] ?? 0}`,
+        );
+
+        // Timer async; tidak memblokir event loop.
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, waitMs);
+        });
+      }
+    }
+
+    throw new Error(`Request ${endpoint} gagal setelah retry.`);
+  }
+
   // ─── Generic Paginated Fetch ──────────────────────────────────────────────────
 
  async fetchAllPages<T>(
@@ -105,13 +199,14 @@ export class IdempiereService {
 
     for (let page = 1; page <= MAX_PAGES; page++) {
       const response =
-        await this.client.get<IdempiereListResponse<T>>(endpoint, {
-          params: {
+        await this.getWithRetry<IdempiereListResponse<T>>(
+          endpoint,
+          {
             ...baseParams,
             '$skip': skip,
             '$top': pageSize,
           },
-        });
+        );
 
       const records = response.data.records;
       const rawRowCount = response.data['row-count'];
@@ -571,6 +666,92 @@ export class IdempiereService {
         ].join(' and '),
 
         '$orderby': 'Updated asc,C_Invoice_ID asc',
+      },
+      100,
+    );
+  }
+
+  async getAllStockAdjustments(
+    dateFrom: string,
+    dateTo: string,
+  ): Promise<IdempiereStockAdjustmentRecord[]> {
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    const docTypeFilter = STOCK_ADJ_ALLOWED_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const warehouseFilter = ALLOWED_WAREHOUSE_IDS
+      .map((id) => `M_Warehouse_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempiereStockAdjustmentRecord>(
+      '/api/v1/models/m_inventory',
+      {
+        '$expand': 'M_InventoryLine',
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `(${warehouseFilter})`,
+          `MovementDate ge '${dateFrom}'`,
+          `MovementDate le '${dateTo}'`,
+        ].join(' and '),
+        '$orderby': 'MovementDate desc',
+      },
+      100,
+    );
+  }
+
+  async getUpdatedStockAdjustments(
+    since: Date,
+  ): Promise<IdempiereStockAdjustmentRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Parameter since wajib berupa Date yang valid.');
+    }
+
+    if (
+      ALLOWED_ORGTRX_IDS.length === 0 ||
+      STOCK_ADJ_ALLOWED_DOCTYPE_IDS.length === 0 ||
+      ALLOWED_WAREHOUSE_IDS.length === 0
+    ) {
+      return [];
+    }
+
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+    const updatedFrom = new Date(
+      since.getTime() + WIB_OFFSET_MS,
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    const docTypeFilter = STOCK_ADJ_ALLOWED_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const warehouseFilter = ALLOWED_WAREHOUSE_IDS
+      .map((id) => `M_Warehouse_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempiereStockAdjustmentRecord>(
+      '/api/v1/models/m_inventory',
+      {
+        '$expand': 'M_InventoryLine',
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `(${warehouseFilter})`,
+          `MovementDate ge '${STOCK_ADJ_FULL_SYNC_DATE_FROM}'`,
+          `Updated ge '${updatedFrom}'`,
+        ].join(' and '),
+
+        '$orderby': 'Updated asc,M_Inventory_ID asc',
       },
       100,
     );

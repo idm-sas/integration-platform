@@ -1,4 +1,3 @@
-// Pastikan idempiere.module.ts isinya seperti ini
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdempiereService } from './idempiere.service';
@@ -21,6 +20,9 @@ import { InventoryStockSyncService } from './sync/inventory-stock-sync.service';
 import { InvoiceLine } from 'src/database/entities/invoice-line.entity';
 import { InvoiceHeader } from 'src/database/entities/invoice-header.entity';
 import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
+import { StockAdjustment } from 'src/database/entities/stock-adjustment.entity';
+import { StockAdjustmentLine } from 'src/database/entities/stock-adjustment-line.entity';
+import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
       InventoryStock,
       InvoiceHeader,
       InvoiceLine,
+      StockAdjustment,
+      StockAdjustmentLine,
     ]),
   ],
   controllers: [SyncController],
@@ -47,6 +51,7 @@ import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
     WarehouseSyncService,
     InventoryStockSyncService,
     SecondarySalesSyncService,
+    StockAdjustmentSyncService,
     SyncOrchestratorService,
   ],
   exports: [
@@ -55,6 +60,7 @@ import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
     SalesmanSyncService,
     RetailersSyncService,
     WarehouseSyncService,
+    StockAdjustmentSyncService,
     SyncOrchestratorService,
   ],
 })

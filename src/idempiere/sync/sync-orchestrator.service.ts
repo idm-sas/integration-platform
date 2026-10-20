@@ -7,6 +7,7 @@ import { SyncResult, SyncStatus } from '../interfaces/sync-result.interface';
 import { WarehouseSyncService } from './warehouse-sync.service';
 import { InventoryStockSyncService } from './inventory-stock-sync.service';
 import { SecondarySalesSyncService } from './secondary-sales-sync.service';
+import { StockAdjustmentSyncService } from './stock-adjustment-sync.service';
 
 @Injectable()
 export class SyncOrchestratorService implements OnApplicationBootstrap {
@@ -26,6 +27,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     private readonly warehouseSyncService: WarehouseSyncService,
     private readonly inventoryStockSyncService: InventoryStockSyncService,
     private readonly secondarySalesSyncService: SecondarySalesSyncService,
+    private readonly stockAdjustmentSyncService: StockAdjustmentSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -87,16 +89,17 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
 
     try {
       // Urutan: category → salesman → product → price
-      results.push(await this.productSyncService.syncCategories('full'));
-      results.push(await this.salesmanSyncService.syncSalesmen('full'));
-      results.push(await this.warehouseSyncService.syncWarehouses('full'));
-      results.push(await this.warehouseSyncService.syncLocators('full'));
-      results.push(await this.retailerSyncService.syncRetailers('full'));
-      results.push(await this.retailerSyncService.syncRetailerRules('full'));
-      results.push(await this.productSyncService.syncProducts('full'));
-      results.push(await this.productSyncService.syncPrices('full'));
-      results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
-      results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
+      // results.push(await this.productSyncService.syncCategories('full'));
+      // results.push(await this.salesmanSyncService.syncSalesmen('full'));
+      // results.push(await this.warehouseSyncService.syncWarehouses('full'));
+      // results.push(await this.warehouseSyncService.syncLocators('full'));
+      // results.push(await this.retailerSyncService.syncRetailers('full'));
+      // results.push(await this.retailerSyncService.syncRetailerRules('full'));
+      // results.push(await this.productSyncService.syncProducts('full'));
+      // results.push(await this.productSyncService.syncPrices('full'));
+      // results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
+      // results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
+      results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -145,6 +148,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.productSyncService.syncPrices('incremental', since));
       results.push(await this.inventoryStockSyncService.syncInventoryStocks('incremental', since));
       results.push(await this.secondarySalesSyncService.syncSecondarySales('incremental', since));
+      results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('incremental', since));
 
       this.syncStatus.lastIncrementalSync = new Date();
 

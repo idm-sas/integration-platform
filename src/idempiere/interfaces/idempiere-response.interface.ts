@@ -271,3 +271,48 @@ export interface IdempiereSecondarySalesLineRecord
   Created: string;
   Updated: string;
 }
+
+export interface IdempiereStockAdjustmentRecord extends IdempiereRecord {
+  AD_Org_ID: {
+    id: number;
+    identifier: string;
+  };
+  AD_OrgTrx_ID: {
+    id: number;
+    identifier: string;
+  };
+  DocumentNo: string;
+  MovementDate: string;
+  DocStatus: {
+    id: number;
+    identifier: string;
+  };
+  M_Warehouse_ID: {
+    id: number;
+    identifier: string;
+  };
+  GrandTotal: number;
+  Description?: string | null;
+  C_DocType_ID: {
+    id: number;
+  };
+  Created: string;
+  Updated: string;
+  M_InventoryLine: IdempiereStockAdjustmentLineRecord[];
+}
+
+export interface IdempiereStockAdjustmentLineRecord extends IdempiereRecord {
+  M_Product_ID?: {
+    id: number;
+  } | null;
+  QtyEntered: number;
+  QtyCount: number;
+  QtyBook: number;
+  M_Locator_ID: {
+    id: number;
+    identifier: string;
+  };
+  Description?: string | null;
+  Created: string;
+  Updated: string;
+}
