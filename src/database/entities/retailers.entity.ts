@@ -93,4 +93,7 @@ export class Retailer {
 
   @Column({ default: false })
   isMainArcode: boolean;
+
+  @Column({ default: false })
+  isBPReplacement: boolean;
 }

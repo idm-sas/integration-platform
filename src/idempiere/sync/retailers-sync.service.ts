@@ -83,6 +83,7 @@ export class RetailersSyncService extends BaseSyncService {
             isShipTo: this.toBoolean(cBPLocation?.IsShipTo),
             isBillTo: this.toBoolean(cBPLocation?.IsBillTo),
             isMainArcode: this.toBoolean(cBPLocation?.IsMainArcode),
+            isBPReplacement: this.toBoolean(record.IsBPReplacement),
           };
 
           if (existing) {
@@ -104,7 +105,8 @@ export class RetailersSyncService extends BaseSyncService {
               existing.isSyncToIntegration  !== data.isSyncToIntegration  ||
               existing.isShipTo             !== data.isShipTo             ||
               existing.isBillTo             !== data.isBillTo             ||
-              existing.isMainArcode         !== data.isMainArcode;
+              existing.isMainArcode         !== data.isMainArcode         ||
+              existing.isBPReplacement      !== data.isBPReplacement;
 
             if (hasChange) {
               await this.retailerRepo.update(existing.id, data);
