@@ -14,8 +14,13 @@ import {
   IdempiereRetailerRecord,
   IdempiereRetailerRulesRecord,
   IdempiereStockAdjustmentRecord,
+  IdempiereStockTransferRecord,
 } from './interfaces/idempiere-response.interface';
-import { ALLOWED_LOCATOR_IDS, ALLOWED_WAREHOUSE_IDS } from 'src/common/constants/warehouse.constant';
+import { 
+  ALLOWED_LOCATOR_IDS, 
+  ALLOWED_WAREHOUSE_IDS, 
+  TRANSFER_LOCATOR_IDS 
+} from 'src/common/constants/warehouse.constant';
 import { FULL_SYNC_DATE_FROM } from 'src/common/constants/date-sync.constant';
 import { ALLOWED_ORGTRX_IDS } from 'src/common/constants/organization.constant';
 import { 
@@ -754,6 +759,92 @@ export class IdempiereService {
         ].join(' and '),
 
         '$orderby': 'Updated asc,M_Inventory_ID asc',
+      },
+      100,
+    );
+  }
+
+  async getAllStockTransfers(
+    dateFrom: string,
+    dateTo: string,
+  ): Promise<IdempiereStockTransferRecord[]> {
+    if (
+      !ALLOWED_ORGTRX_IDS.length ||
+      !TRANSFER_DOCTYPE_IDS.length ||
+      !TRANSFER_LOCATOR_IDS.length
+    ) {
+      throw new Error(
+        'Filter organisasi, tipe dokumen, dan locator stock transfer tidak boleh kosong.',
+      );
+    }
+
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    const docTypeFilter = TRANSFER_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const locatorFilter = TRANSFER_LOCATOR_IDS
+      .map((id) => `M_Locator_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempiereStockTransferRecord>(
+      '/api/v1/models/m_movement',
+      {
+        '$expand': `M_MovementLine($filter=(${locatorFilter}))`,
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `MovementDate ge '${dateFrom}'`,
+          `MovementDate le '${dateTo}'`,
+        ].join(' and '),
+        '$orderby': 'MovementDate desc, M_Movement_ID desc',
+      },
+      100,
+    );
+  }
+
+  async getUpdatedStockTransfers(
+    since: Date,
+  ): Promise<IdempiereStockTransferRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Checkpoint incremental tidak valid.');
+    }
+
+    if (
+      !ALLOWED_ORGTRX_IDS.length ||
+      !TRANSFER_DOCTYPE_IDS.length ||
+      !TRANSFER_LOCATOR_IDS.length
+    ) {
+      throw new Error(
+        'Filter organisasi, tipe dokumen, dan locator stock transfer tidak boleh kosong.',
+      );
+    }
+
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    const docTypeFilter = TRANSFER_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const locatorFilter = TRANSFER_LOCATOR_IDS
+      .map((id) => `M_Locator_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempiereStockTransferRecord>(
+      '/api/v1/models/m_movement',
+      {
+        '$expand': `M_MovementLine($filter=(${locatorFilter}))`,
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `Updated ge '${since.toISOString()}'`,
+        ].join(' and '),
+        '$orderby': 'Updated asc, M_Movement_ID asc',
       },
       100,
     );

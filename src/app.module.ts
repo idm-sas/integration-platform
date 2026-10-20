@@ -23,6 +23,7 @@ import { RetailerModule } from './modules/retailer/retailer.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SecondarySalesModule } from './modules/secondary-sales/secondary-sales.module';
 import { StockAdjustmentsModule } from './modules/stock-adjustments/stock-adjustments.module';
+import { StockTransfersModule } from './modules/stock-transfers/stock-transfers.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { StockAdjustmentsModule } from './modules/stock-adjustments/stock-adjust
     RetailerModule,
     InventoryModule,
     SecondarySalesModule,
-    StockAdjustmentsModule
+    StockAdjustmentsModule,
+    StockTransfersModule,
   ],
   providers: [AuditLogMiddleware, RateLimitMiddleware],
 })

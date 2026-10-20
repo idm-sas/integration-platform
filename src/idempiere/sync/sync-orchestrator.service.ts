@@ -8,6 +8,7 @@ import { WarehouseSyncService } from './warehouse-sync.service';
 import { InventoryStockSyncService } from './inventory-stock-sync.service';
 import { SecondarySalesSyncService } from './secondary-sales-sync.service';
 import { StockAdjustmentSyncService } from './stock-adjustment-sync.service';
+import { StockTransferSyncService } from './stock-transfer-sync.service';
 
 @Injectable()
 export class SyncOrchestratorService implements OnApplicationBootstrap {
@@ -28,6 +29,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     private readonly inventoryStockSyncService: InventoryStockSyncService,
     private readonly secondarySalesSyncService: SecondarySalesSyncService,
     private readonly stockAdjustmentSyncService: StockAdjustmentSyncService,
+    private readonly stockTransferSyncService: StockTransferSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -99,6 +101,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
       results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
       results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('full'));
+      results.push(await this.stockTransferSyncService.syncStockTransfers('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -148,7 +151,8 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
       results.push(await this.inventoryStockSyncService.syncInventoryStocks('incremental', since));
       results.push(await this.secondarySalesSyncService.syncSecondarySales('incremental', since));
       results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('incremental', since));
-
+      results.push(await this.stockTransferSyncService.syncStockTransfers('incremental', since));
+      
       this.syncStatus.lastIncrementalSync = new Date();
 
       const totalCreated = results.reduce((s, r) => s + r.created, 0);

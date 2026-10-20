@@ -316,3 +316,47 @@ export interface IdempiereStockAdjustmentLineRecord extends IdempiereRecord {
   Created: string;
   Updated: string;
 }
+
+export interface IdempiereStockTransferRecord extends IdempiereRecord {
+  AD_Org_ID: {
+    id: number;
+    identifier: string;
+  };
+  AD_OrgTrx_ID: {
+    id: number;
+    identifier: string;
+  };
+  DocumentNo: string;
+  MovementDate: string;
+  DocStatus: {
+    id: string;
+    identifier: string;
+  };
+  GrandTotal?: number | null;
+  Description?: string | null;
+  C_DocType_ID: {
+    id: number;
+  };
+  Created: string;
+  Updated: string;
+  M_MovementLine: IdempiereStockTransferLineRecord[];
+}
+
+export interface IdempiereStockTransferLineRecord extends IdempiereRecord {
+  M_Product_ID: {
+    id: number;
+    identifier?: string;
+  };
+  M_Locator_ID: {
+    id: number;
+    identifier: string;
+  };
+  M_LocatorTo_ID: {
+    id: number;
+    identifier: string;
+  };
+  MovementQty: number;
+  Description?: string | null;
+  Created: string;
+  Updated: string;
+}

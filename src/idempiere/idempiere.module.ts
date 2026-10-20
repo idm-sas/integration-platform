@@ -23,6 +23,9 @@ import { SecondarySalesSyncService } from './sync/secondary-sales-sync.service';
 import { StockAdjustment } from 'src/database/entities/stock-adjustment.entity';
 import { StockAdjustmentLine } from 'src/database/entities/stock-adjustment-line.entity';
 import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service';
+import { StockTransfer } from 'src/database/entities/stock-transfer.entity';
+import { StockTransferLine } from 'src/database/entities/stock-transfer-line.entity';
+import { StockTransferSyncService } from './sync/stock-transfer-sync.service';
 
 @Module({
   imports: [
@@ -40,6 +43,8 @@ import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service
       InvoiceLine,
       StockAdjustment,
       StockAdjustmentLine,
+      StockTransfer,
+      StockTransferLine,
     ]),
   ],
   controllers: [SyncController],
@@ -52,6 +57,7 @@ import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service
     InventoryStockSyncService,
     SecondarySalesSyncService,
     StockAdjustmentSyncService,
+    StockTransferSyncService,
     SyncOrchestratorService,
   ],
   exports: [
@@ -61,6 +67,9 @@ import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service
     RetailersSyncService,
     WarehouseSyncService,
     StockAdjustmentSyncService,
+    StockTransferSyncService,
+    InventoryStockSyncService,
+    SecondarySalesSyncService,
     SyncOrchestratorService,
   ],
 })
