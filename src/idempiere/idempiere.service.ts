@@ -183,7 +183,7 @@ export class IdempiereService {
     }
 
     const allRecords: T[] = [];
-    const MAX_PAGES = 500;
+    const MAX_PAGES = 1000;
 
     let skip = 0;
     let expectedTotal: number | undefined;
