@@ -194,7 +194,13 @@ export class SecondarySalesSyncService extends BaseSyncService {
 
           // ── totalNetValue ────────────────────────────────────────────────
           // Netto sebelum pajak (DPP) = TotalLines
-          const totalNetValue = round2(Number(raw.TotalLines || 0));
+          // const totalNetValue = round2(Number(raw.TotalLines || 0));
+          const totalNetValue = round2(
+            lines.reduce(
+              (sum, line) => sum + round2(Number(line.LineNetAmt)),
+              0,
+            ),
+          );
 
           // ── taxValue ─────────────────────────────────────────────────────
           // Jika GrandTotal sudah termasuk PPN (IsTaxIncluded = true):
@@ -205,15 +211,15 @@ export class SecondarySalesSyncService extends BaseSyncService {
           //   PPN(tax)  = TotalLines × taxRate / 100
           let taxValue: number;
           if (raw.IsTaxIncluded) {
-            const dpp = Number(raw.GrandTotal) / divisor;
-            taxValue  = round2(Number(raw.GrandTotal) - dpp);
+            const dpp = Number(totalGrossValue) / divisor;
+            taxValue  = round2(Number(totalGrossValue) - dpp);
           } else {
-            taxValue = round2(Number(raw.TotalLines || 0) * taxRate / 100);
+            taxValue = round2(Number(totalNetValue) * taxRate / 100);
           }
 
           // ── totalValue ───────────────────────────────────────────────────
           // Total akhir (termasuk PPN) = GrandTotal
-          const totalValue = round2(Number(raw.GrandTotal || 0));
+          const totalValue = round2(Number(totalNetValue || 0));
 
           // ── taxPercent ───────────────────────────────────────────────────
           // Persentase PPN (10 atau 11), bukan jumlah pajak
@@ -272,7 +278,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
             remark:                 raw.Description ?? null,
             retailerErpId:          retailer.id,
             esmId:                  salesman.id,
-            issotrx:                raw.IsSOTrx ? 'Y' : 'N',
+            issotrx:                this.toBoolean(raw.IsSOTrx),
             c_doctype_id:           raw.C_DocType_ID?.id ?? 0,
           };
 

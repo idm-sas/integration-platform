@@ -157,8 +157,8 @@ export class InvoiceHeader {
   })
   salesman?: Salesman;
 
-  @Column({ type: 'char', length: 1, default: 'N' })
-  issotrx!: 'Y' | 'N';
+  @Column({ type: 'boolean', default: false })
+  issotrx: boolean;
 
   @Column({ name: 'c_doctype_id', type: 'integer' })
   c_doctype_id!: number;

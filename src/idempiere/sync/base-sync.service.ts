@@ -4,8 +4,12 @@ import { SyncResult } from '../interfaces/sync-result.interface';
 export abstract class BaseSyncService {
   protected abstract readonly logger: Logger;
 
-  protected toBoolean(value: any): boolean {
-    return value === 'true' || value === true;
+  protected toBoolean(value: unknown): boolean {
+    if (typeof value === 'boolean') return value;
+
+    const normalized = String(value ?? '').trim().toLowerCase();
+
+    return ['true', 'y', 'yes', '1'].includes(normalized);
   }
 
   protected createResult(
