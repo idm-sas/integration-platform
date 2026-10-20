@@ -181,7 +181,6 @@ export class InventoryStockSyncService extends BaseSyncService {
         const key = JSON.stringify([
           warehouse.id,
           product.id,
-          dateMaterialPolicy,
         ]);
         const existingGroup = groups.get(key);
 
@@ -190,7 +189,18 @@ export class InventoryStockSyncService extends BaseSyncService {
           existingGroup.qtyOnHandInUOM += qtyOnHandInUOM;
           existingGroup.locatorIds.add(locatorErpId);
 
-          // Beberapa batch pada tanggal sama digabung.
+          // Tanggal terbaru dari semua baris yang digabung.
+          // Perbandingan string berlaku untuk format YYYY-MM-DD.
+          if (
+            dateMaterialPolicy !== null &&
+            (
+              existingGroup.dateMaterialPolicy === null ||
+              dateMaterialPolicy > existingGroup.dateMaterialPolicy
+            )
+          ) {
+            existingGroup.dateMaterialPolicy = dateMaterialPolicy;
+          }
+
           if (existingGroup.batchNo !== batchNo) {
             existingGroup.batchNo = null;
           }
@@ -221,10 +231,6 @@ export class InventoryStockSyncService extends BaseSyncService {
             where: {
               productId: group.product.id,
               warehouseId: group.warehouse.id,
-              dateMaterialPolicy:
-                group.dateMaterialPolicy === null
-                  ? IsNull()
-                  : group.dateMaterialPolicy,
             },
             take: 2,
           });

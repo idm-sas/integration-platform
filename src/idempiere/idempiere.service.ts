@@ -358,43 +358,23 @@ export class IdempiereService {
     dateFrom: string,
     dateTo: string,
   ): Promise<IdempiereStorageOnHandRecord[]> {
-    const locatorFilter = ALLOWED_LOCATOR_IDS
-      .map((id) => `M_Locator_ID eq ${id}`)
-      .join(' or ');
+    const from = new Date(`${dateFrom}T00:00:00Z`);
+    const to = new Date(`${dateTo}T00:00:00Z`);
 
-    return this.fetchAllPages<IdempiereStorageOnHandRecord>(
-      '/api/v1/models/m_storageonhand',
-      {
-        '$expand': 'M_Locator_ID',
-        '$filter': [
-          `(${locatorFilter})`,
-          `DateMaterialPolicy ge '${dateFrom}'`,
-          `DateMaterialPolicy le '${dateTo}'`,
-        ].join(' and '),
-
-        // Urutan stabil ketika mengambil beberapa halaman.
-        '$orderby': 'M_Locator_ID asc, M_StorageOnHand_ID asc',
-      },
-      100,
-    );
-  }
-
-  async getUpdatedStorageOnHand(
-    since: Date,
-  ): Promise<IdempiereStorageOnHandRecord[]> {
-    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
-      throw new Error('Parameter since wajib berupa Date yang valid.');
+    if (
+      Number.isNaN(from.getTime()) ||
+      Number.isNaN(to.getTime()) ||
+      from > to
+    ) {
+      throw new Error('Rentang tanggal inventory tidak valid.');
     }
 
-    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-    const sinceWib = new Date(since.getTime() + WIB_OFFSET_MS);
-
-    const dateFrom = sinceWib.toISOString().slice(0, 10);
+    if (ALLOWED_LOCATOR_IDS.length === 0) {
+      return [];
+    }
 
     const dateToExclusive = new Date(
-      sinceWib.getTime() + ONE_DAY_MS,
+      to.getTime() + 24 * 60 * 60 * 1000,
     )
       .toISOString()
       .slice(0, 10);
@@ -407,15 +387,115 @@ export class IdempiereService {
       '/api/v1/models/m_storageonhand',
       {
         '$expand': 'M_Locator_ID',
+
         '$filter': [
           `(${locatorFilter})`,
-          `DateMaterialPolicy ge '${dateFrom}'`,
+
+          // Sertakan tanggal lama untuk kebutuhan fallback.
           `DateMaterialPolicy lt '${dateToExclusive}'`,
         ].join(' and '),
-        '$orderby': 'M_Locator_ID asc, M_StorageOnHand_ID asc',
+
+        '$orderby': 'M_Locator_ID asc,M_StorageOnHand_ID asc',
       },
       100,
     );
+  }
+
+  async getUpdatedStorageOnHand(
+    since: Date,
+  ): Promise<IdempiereStorageOnHandRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Parameter since wajib berupa Date yang valid.');
+    }
+
+    if (ALLOWED_LOCATOR_IDS.length === 0) {
+      return [];
+    }
+
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+    // Ambil perubahan sejak awal hari WIB dari checkpoint terakhir.
+    const updatedFrom = new Date(
+      since.getTime() + WIB_OFFSET_MS,
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const locatorFilter = ALLOWED_LOCATOR_IDS
+      .map((id) => `M_Locator_ID eq ${id}`)
+      .join(' or ');
+
+    // 1. Cari baris yang berubah untuk mengetahui produk terdampak.
+    const changedRecords =
+      await this.fetchAllPages<IdempiereStorageOnHandRecord>(
+        '/api/v1/models/m_storageonhand',
+        {
+          '$expand': 'M_Locator_ID',
+          '$filter': [
+            `(${locatorFilter})`,
+            `Updated ge '${updatedFrom}'`,
+          ].join(' and '),
+
+          '$orderby': 'Updated asc,M_StorageOnHand_ID asc',
+        },
+        100,
+      );
+
+    if (changedRecords.length === 0) {
+      return [];
+    }
+
+    const changedProductIds = new Set<number>();
+
+    for (const record of changedRecords) {
+      const productId = Number(record.M_Product_ID?.id);
+
+      if (!Number.isSafeInteger(productId) || productId <= 0) {
+        throw new Error(
+          'Record stok yang berubah tidak memiliki product ID valid.',
+        );
+      }
+
+      changedProductIds.add(productId);
+    }
+
+    // 2. Ambil seluruh baris stok produk terdampak,
+    //    termasuk locator/batch/tanggal yang tidak berubah.
+    const productIds = [...changedProductIds];
+    const records: IdempiereStorageOnHandRecord[] = [];
+    const PRODUCT_BATCH_SIZE = 50;
+
+    for (
+      let i = 0;
+      i < productIds.length;
+      i += PRODUCT_BATCH_SIZE
+    ) {
+      const chunk = productIds.slice(i, i + PRODUCT_BATCH_SIZE);
+
+      const productFilter = chunk
+        .map((id) => `M_Product_ID eq ${id}`)
+        .join(' or ');
+
+      const productRecords =
+        await this.fetchAllPages<IdempiereStorageOnHandRecord>(
+          '/api/v1/models/m_storageonhand',
+          {
+            '$expand': 'M_Locator_ID',
+
+            '$filter': [
+              `(${locatorFilter})`,
+              `(${productFilter})`,
+            ].join(' and '),
+
+            '$orderby': 'M_Locator_ID asc,M_StorageOnHand_ID asc',
+          },
+          100,
+        );
+
+      records.push(...productRecords);
+    }
+
+    return records;
   }
 
   async getAllSecondarySales(
