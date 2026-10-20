@@ -15,7 +15,7 @@ import {
   IdempiereRetailerRulesRecord,
 } from './interfaces/idempiere-response.interface';
 import { ALLOWED_LOCATOR_IDS } from 'src/common/constants/warehouse.constant';
-import { ALLOWED_ORGTRX_IDS, ALLOWED_DOCTYPE_IDS } from 'src/common/constants/organization.constant';
+import { FULL_SYNC_DATE_FROM, ALLOWED_ORGTRX_IDS, ALLOWED_DOCTYPE_IDS } from 'src/common/constants/organization.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -446,21 +446,24 @@ export class IdempiereService {
   }
 
   async getUpdatedSecondarySales(
-     since: Date,
+    since: Date,
   ): Promise<IdempiereSecondarySalesRecord[]> {
     if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
       throw new Error('Parameter since wajib berupa Date yang valid.');
     }
 
+    if (
+      ALLOWED_ORGTRX_IDS.length === 0 ||
+      ALLOWED_DOCTYPE_IDS.length === 0
+    ) {
+      return [];
+    }
+
     const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-    const sinceWib = new Date(since.getTime() + WIB_OFFSET_MS);
-
-    const dateFrom = sinceWib.toISOString().slice(0, 10);
-
-    const dateToExclusive = new Date(
-      sinceWib.getTime() + ONE_DAY_MS,
+    // Ambil ulang sejak awal hari WIB dari checkpoint.
+    const updatedFrom = new Date(
+      since.getTime() + WIB_OFFSET_MS,
     )
       .toISOString()
       .slice(0, 10);
@@ -468,7 +471,7 @@ export class IdempiereService {
     const orgTrxFilter = ALLOWED_ORGTRX_IDS
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
-    
+
     const docTypeFilter = ALLOWED_DOCTYPE_IDS
       .map((id) => `C_DocType_ID eq ${id}`)
       .join(' or ');
@@ -476,14 +479,18 @@ export class IdempiereService {
     return this.fetchAllPages<IdempiereSecondarySalesRecord>(
       '/api/v1/models/c_invoice',
       {
-        '$expand': 'C_InvoiceLine($expand=C_OrderLine_ID),C_Order_ID,C_BPartner_ID,SalesRep_ID',
+        '$expand':
+          'C_InvoiceLine($expand=C_OrderLine_ID),' +
+          'C_Order_ID,C_BPartner_ID,SalesRep_ID',
+
         '$filter': [
           `(${orgTrxFilter})`,
           `(${docTypeFilter})`,
-          `DateInvoiced ge '${dateFrom}'`,
-          `DateInvoiced lt '${dateToExclusive}'`,
+          `DateInvoiced ge '${FULL_SYNC_DATE_FROM}'`,
+          `Updated ge '${updatedFrom}'`,
         ].join(' and '),
-        '$orderby': 'DateInvoiced desc',
+
+        '$orderby': 'Updated asc,C_Invoice_ID asc',
       },
       100,
     );

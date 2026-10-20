@@ -74,15 +74,20 @@ export class SecondarySalesSyncService extends BaseSyncService {
         : await this.idempiereService.getUpdatedSecondarySales(since!);
 
       this.logger.log(
-        `Fetched ${records.length} records ` +
-          `| from=${FULL_SYNC_DATE_FROM} ` +
-          `| to=${FULL_SYNC_DATE_TO}`,
+        `Fetched ${records.length} secondary sales invoices | ` +
+        `strategy=${strategy} | invoiceDateFrom=${FULL_SYNC_DATE_FROM} | ` +
+        (
+          strategy === 'full'
+            ? `invoiceDateTo=${FULL_SYNC_DATE_TO}`
+            : `since=${since!.toISOString()}`
+        ),
       );
 
       if (records.length === 0) {
-        this.logger.warn(
-          'Tidak ada record sumber. Tidak ada perubahan stok lokal.',
-        );
+        this.logger.log('Tidak ada invoice yang perlu disinkronkan.');
+
+        result.durationMs = Date.now() - startTime;
+        this.logResult(result);
 
         return result;
       }
@@ -240,7 +245,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
             this.logger.debug(
               `Retailer value=${raw.C_BPartner_ID?.Value} not in MiddleDB, skipping invoice ${raw.DocumentNo}`,
             );
-            result.skipped++;
+            result.failed++;
             continue;
           }
 
@@ -248,7 +253,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
             this.logger.debug(
               `Salesman idempiereId=${salesmanEId} not in MiddleDB, skipping invoice ${raw.DocumentNo}`,
             );
-            result.skipped++;
+            result.failed++;
             continue;
           }
 
@@ -256,7 +261,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
             this.logger.debug(
               `Warehouse idempiereId=${warehouseEId} not in MiddleDB, skipping invoice ${raw.DocumentNo}`,
             );
-            result.skipped++;
+            result.failed++;
             continue;
           }
 
@@ -398,7 +403,12 @@ export class SecondarySalesSyncService extends BaseSyncService {
 
       const productEId = Number(line.M_Product_ID!.id);
       const product    = productMap.get(productEId);
-      if (!product) continue;
+      if (!product) {
+        throw new Error(
+          `Product idempiereId=${productEId} belum tersedia ` +
+          `untuk invoice ${line._invoiceNo}`,
+        );
+      }
 
       // ── Hitung nilai (semua number) ───────────────────────────────────────
       const qtyInvoiced  = Number(line.QtyInvoiced  || 0);
