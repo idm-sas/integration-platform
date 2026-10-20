@@ -17,15 +17,16 @@ import { Retailer } from '../../database/entities/retailers.entity';
 import { Salesman } from '../../database/entities/salesman.entity';
 import { Warehouse } from '../../database/entities/warehouse.entity';
 import { 
+  getDivisor,
+  getTaxRate,
+  round2
+} from 'src/common/constants/calculation.constant';
+import {
   FULL_SYNC_DATE_FROM, 
   FULL_SYNC_DATE_TO,
   BATCH_IN_SIZE,
   BATCH_SAVE,
-  TAX_CHANGE_DATE,
-  getDivisor,
-  getTaxRate,
-  round2
-} from 'src/common/constants/organization.constant';
+} from 'src/common/constants/date-sync.constant';
 
 @Injectable()
 export class SecondarySalesSyncService extends BaseSyncService {

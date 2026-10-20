@@ -20,5 +20,3 @@ export const ALLOWED_WAREHOUSE_IDS = [
 	2200025, // Tangerang OL
 	1000007, // Sunter Rusak
 ];
-export const FULL_SYNC_DATE_FROM = '2026-09-01';
-export const FULL_SYNC_DATE_TO   = '2026-09-20';

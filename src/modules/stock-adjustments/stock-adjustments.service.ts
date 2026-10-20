@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 
 import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
 import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
-import { ALLOWED_DOCTYPE_IDS } from '../../common/constants/stock-adjustment.constant';
+import { ADJUSTMENT_DOCTYPE_IDS } from '../../common/constants/doctype.constant';
 
 import { JwtPayload } from '../../auth/token.service';
 
@@ -88,7 +88,7 @@ export class StockAdjustmentsService {
 
     // Tidak ada document type atau kategori yang boleh diakses.
     if (
-      ALLOWED_DOCTYPE_IDS.length === 0 ||
+      ADJUSTMENT_DOCTYPE_IDS.length === 0 ||
       (allowedCats !== null && allowedCats.length === 0)
     ) {
       return this.createResponse(
@@ -142,7 +142,7 @@ export class StockAdjustmentsService {
         dateTo: query.dateTo,
       })
       .andWhere('header.c_doctype_id IN (:...docTypes)', {
-        docTypes: ALLOWED_DOCTYPE_IDS,
+        docTypes: ADJUSTMENT_DOCTYPE_IDS,
       });
 
     // Pertahankan filter pengecualian product group.

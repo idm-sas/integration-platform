@@ -15,7 +15,7 @@ import {
   FULL_SYNC_DATE_TO,
   BATCH_IN_SIZE,
   BATCH_SAVE,
-} from 'src/common/constants/stock-adjustment.constant';
+} from 'src/common/constants/date-sync.constant';
 
 @Injectable()
 export class StockAdjustmentSyncService extends BaseSyncService {

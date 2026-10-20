@@ -16,11 +16,13 @@ import {
   IdempiereStockAdjustmentRecord,
 } from './interfaces/idempiere-response.interface';
 import { ALLOWED_LOCATOR_IDS, ALLOWED_WAREHOUSE_IDS } from 'src/common/constants/warehouse.constant';
-import { FULL_SYNC_DATE_FROM, ALLOWED_ORGTRX_IDS, ALLOWED_DOCTYPE_IDS } from 'src/common/constants/organization.constant';
-import {
-  ALLOWED_DOCTYPE_IDS as STOCK_ADJ_ALLOWED_DOCTYPE_IDS,
-  FULL_SYNC_DATE_FROM as STOCK_ADJ_FULL_SYNC_DATE_FROM,
-} from 'src/common/constants/stock-adjustment.constant';
+import { FULL_SYNC_DATE_FROM } from 'src/common/constants/date-sync.constant';
+import { ALLOWED_ORGTRX_IDS } from 'src/common/constants/organization.constant';
+import { 
+  SECONDARY_DOCTYPE_IDS, 
+  ADJUSTMENT_DOCTYPE_IDS,
+  TRANSFER_DOCTYPE_IDS
+} from 'src/common/constants/doctype.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -600,7 +602,7 @@ export class IdempiereService {
     const orgTrxFilter = ALLOWED_ORGTRX_IDS
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
-    const docTypeFilter = ALLOWED_DOCTYPE_IDS
+    const docTypeFilter = SECONDARY_DOCTYPE_IDS
       .map((id) => `C_DocType_ID eq ${id}`)
       .join(' or ');
 
@@ -629,7 +631,7 @@ export class IdempiereService {
 
     if (
       ALLOWED_ORGTRX_IDS.length === 0 ||
-      ALLOWED_DOCTYPE_IDS.length === 0
+      SECONDARY_DOCTYPE_IDS.length === 0
     ) {
       return [];
     }
@@ -647,7 +649,7 @@ export class IdempiereService {
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
 
-    const docTypeFilter = ALLOWED_DOCTYPE_IDS
+    const docTypeFilter = SECONDARY_DOCTYPE_IDS
       .map((id) => `C_DocType_ID eq ${id}`)
       .join(' or ');
 
@@ -679,7 +681,7 @@ export class IdempiereService {
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
 
-    const docTypeFilter = STOCK_ADJ_ALLOWED_DOCTYPE_IDS
+    const docTypeFilter = ADJUSTMENT_DOCTYPE_IDS
       .map((id) => `C_DocType_ID eq ${id}`)
       .join(' or ');
 
@@ -713,7 +715,7 @@ export class IdempiereService {
 
     if (
       ALLOWED_ORGTRX_IDS.length === 0 ||
-      STOCK_ADJ_ALLOWED_DOCTYPE_IDS.length === 0 ||
+      ADJUSTMENT_DOCTYPE_IDS.length === 0 ||
       ALLOWED_WAREHOUSE_IDS.length === 0
     ) {
       return [];
@@ -731,7 +733,7 @@ export class IdempiereService {
       .map((id) => `AD_OrgTrx_ID eq ${id}`)
       .join(' or ');
 
-    const docTypeFilter = STOCK_ADJ_ALLOWED_DOCTYPE_IDS
+    const docTypeFilter = ADJUSTMENT_DOCTYPE_IDS
       .map((id) => `C_DocType_ID eq ${id}`)
       .join(' or ');
 
@@ -747,7 +749,7 @@ export class IdempiereService {
           `(${orgTrxFilter})`,
           `(${docTypeFilter})`,
           `(${warehouseFilter})`,
-          `MovementDate ge '${STOCK_ADJ_FULL_SYNC_DATE_FROM}'`,
+          `MovementDate ge '${FULL_SYNC_DATE_FROM}'`,
           `Updated ge '${updatedFrom}'`,
         ].join(' and '),
 

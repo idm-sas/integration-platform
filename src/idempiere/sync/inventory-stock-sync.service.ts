@@ -16,7 +16,7 @@ import {
 import {
   FULL_SYNC_DATE_FROM,
   FULL_SYNC_DATE_TO,
-} from '../../common/constants/warehouse.constant';
+} from '../../common/constants/date-sync.constant';
 
 interface GroupedStock {
   product: Product;

@@ -15,7 +15,7 @@ import {
 import { InvoiceHeader } from '../../database/entities/invoice-header.entity';
 import { InvoiceLine } from '../../database/entities/invoice-line.entity';
 import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
-import { ALLOWED_DOCTYPE_IDS } from '../../common/constants/organization.constant';
+import { SECONDARY_DOCTYPE_IDS } from '../../common/constants/doctype.constant';
 import { Salesman } from 'src/database/entities/salesman.entity';
 import { Retailer } from 'src/database/entities/retailers.entity';
 import { RetailerRules } from 'src/database/entities/retailer-rules.entity';
@@ -214,9 +214,9 @@ export class SecondarySalesService {
         bpGroup: 'SALES SIGNIFY',
       });
 
-    if (ALLOWED_DOCTYPE_IDS.length > 0) {
-      qb.andWhere('header.c_doctype_id IN (:...allowedDocTypes)', {
-        allowedDocTypes: ALLOWED_DOCTYPE_IDS,
+    if (SECONDARY_DOCTYPE_IDS.length > 0) {
+      qb.andWhere('header.c_doctype_id IN (:...secondaryDocTypes)', {
+        secondaryDocTypes: SECONDARY_DOCTYPE_IDS,
       });
     } else {
       qb.andWhere('1 = 0');
