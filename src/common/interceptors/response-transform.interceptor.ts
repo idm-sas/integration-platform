@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'node:crypto';
 import { SUCCESS_MESSAGE } from '../constants/http-status.constant';
 
 @Injectable()
