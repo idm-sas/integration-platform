@@ -24,6 +24,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { SecondarySalesModule } from './modules/secondary-sales/secondary-sales.module';
 import { StockAdjustmentsModule } from './modules/stock-adjustments/stock-adjustments.module';
 import { StockTransfersModule } from './modules/stock-transfers/stock-transfers.module';
+import { PrimaryInvoicesModule } from './modules/primary-invoices/primary-invoices.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { StockTransfersModule } from './modules/stock-transfers/stock-transfers.
     SecondarySalesModule,
     StockAdjustmentsModule,
     StockTransfersModule,
+    PrimaryInvoicesModule,
   ],
   providers: [AuditLogMiddleware, RateLimitMiddleware],
 })

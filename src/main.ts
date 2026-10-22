@@ -15,6 +15,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { SecondarySalesModule } from './modules/secondary-sales/secondary-sales.module';
 import { StockAdjustmentsModule } from './modules/stock-adjustments/stock-adjustments.module';
 import { StockTransfersModule } from './modules/stock-transfers/stock-transfers.module';
+import { PrimaryInvoicesModule } from './modules/primary-invoices/primary-invoices.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -98,7 +99,17 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, swaggerConfig, {
       // Hanya include module yang relevan untuk principal
-      include: [AuthModule, ProductModule, SalesmanModule, RetailerModule, InventoryModule, SecondarySalesModule, StockAdjustmentsModule, StockTransfersModule],
+      include: [
+        AuthModule, 
+        ProductModule, 
+        SalesmanModule, 
+        RetailerModule, 
+        InventoryModule, 
+        SecondarySalesModule, 
+        StockAdjustmentsModule, 
+        StockTransfersModule, 
+        PrimaryInvoicesModule
+      ],
       extraModels: [],
     });
 

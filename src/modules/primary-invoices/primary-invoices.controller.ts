@@ -13,30 +13,28 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { SecondarySalesService } from './secondary-sales.service';
-import { SecondarySalesQueryDto } from './dto/secondary-sales-query.dto';
-import { SecondarySalesSnapshotResponseDto } from './dto/secondary-sales-snapshot.dto';
-
+import { PrimaryInvoicesService } from './primary-invoices.service';
+import { PrimaryInvoicesQueryDto } from './dto/primary-invoices-query.dto';
+import { PrimaryInvoicesSnapshotResponseDto } from './dto/primary-invoices-snapshot.dto';
 import { AccessTokenGuard } from '../../auth/guards/access-token.guard';
 import { ScopeGuard } from '../../auth/guards/scope.guard';
 import { CurrentPrincipal } from '../../common/decorators/current-principal.decorator';
 import { JwtPayload } from '../../auth/token.service';
 
-@ApiTags('Secondary Sales')
+@ApiTags('Primary Invoices')
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, ScopeGuard)
-@Controller('api/v1/secondary-sales')
-export class SecondarySalesController {
+@Controller('api/v1/primary')
+export class PrimaryInvoicesController {
   constructor(
-    private readonly secondarySalesService: SecondarySalesService,
+    private readonly primaryInvoicesService: PrimaryInvoicesService,
   ) {}
 
   @Get('invoices')
   @ApiOperation({
-    summary: 'Secondary Sales Invoices',
+    summary: 'Primary Invoices',
     description:
-      'Mengambil daftar invoice secondary sales dari data sinkronisasi iDempiere ' +
-      'berdasarkan rentang tanggal dan salesman.',
+      'Mengambil daftar invoice vendor dari data sinkronisasi iDempiere ',
   })
   @ApiQuery({
     name: 'dateFrom',
@@ -66,12 +64,12 @@ export class SecondarySalesController {
   })
   @ApiResponse({
     status: 200,
-    type: SecondarySalesSnapshotResponseDto,
+    type: PrimaryInvoicesSnapshotResponseDto,
   })
   async getInvoices(
-    @Query() query: SecondarySalesQueryDto,
+    @Query() query: PrimaryInvoicesQueryDto,
     @CurrentPrincipal() principal: JwtPayload,
-  ): Promise<SecondarySalesSnapshotResponseDto> {
-    return this.secondarySalesService.getInvoices(query, principal);
+  ): Promise<PrimaryInvoicesSnapshotResponseDto> {
+    return this.primaryInvoicesService.getInvoices(query, principal);
   }
 }

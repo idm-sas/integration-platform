@@ -1,55 +1,42 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
-
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { SUCCESS_MESSAGE } from '../../common/constants/http-status.constant';
 import { JwtPayload } from '../../auth/token.service';
-
-import { SecondarySalesQueryDto } from './dto/secondary-sales-query.dto';
+import { PrimaryInvoicesQueryDto } from './dto/primary-invoices-query.dto';
 import {
-  SecondarySalesInvoiceDto,
-  SecondarySalesLineDto,
-  SecondarySalesSnapshotResponseDto,
-} from './dto/secondary-sales-snapshot.dto';
-
+  PrimaryInvoicesDto,
+  PrimaryInvoiceLineDto,
+  PrimaryInvoicesSnapshotResponseDto,
+} from './dto/primary-invoices-snapshot.dto';
 import { InvoiceHeader } from '../../database/entities/invoice-header.entity';
 import { InvoiceLine } from '../../database/entities/invoice-line.entity';
 import { EXCLUDED_PRODUCT_GROUPS } from '../../common/constants/product.constant';
-import { SECONDARY_DOCTYPE_IDS } from '../../common/constants/doctype.constant';
-import { Salesman } from 'src/database/entities/salesman.entity';
-import { Retailer } from 'src/database/entities/retailers.entity';
-import { RetailerRules } from 'src/database/entities/retailer-rules.entity';
-
-type ResolvedInvoiceHeader = InvoiceHeader & {
-  replacementRetailer?: Retailer | null;
-  replacementSalesman?: Salesman | null;
-};
+import { PRIMARY_DOCTYPE_IDS } from '../../common/constants/doctype.constant';
 
 @Injectable()
-export class SecondarySalesService {
-  private readonly logger = new Logger(SecondarySalesService.name);
+export class PrimaryInvoicesService {
+  private readonly logger = new Logger(PrimaryInvoicesService.name);
 
   constructor(
     @InjectRepository(InvoiceHeader)
     private readonly headerRepo: Repository<InvoiceHeader>,
-
     @InjectRepository(InvoiceLine)
     private readonly lineRepo: Repository<InvoiceLine>,
   ) {}
 
   // ─── Public Entry Point ───────────────────────────────────────────────────
-
   async getInvoices(
-    query: SecondarySalesQueryDto,
+    query: PrimaryInvoicesQueryDto,
     principal: JwtPayload,
-  ): Promise<SecondarySalesSnapshotResponseDto> {
+  ): Promise<PrimaryInvoicesSnapshotResponseDto> {
     const allowedCats = this.getAllowedCategories(principal.scopes);
     const generatedAt = new Date().toISOString();
     const page  = query.page  ?? 1;
     const limit = query.limit ?? 20;
 
     this.logger.log(
-      `Loading secondary sales invoices | principal: ${principal.sub} | ` +
+      `Loading primary invoices | principal: ${principal.sub} | ` +
       `dateFrom=${query.dateFrom} dateTo=${query.dateTo} | ` +
       `page=${page} limit=${limit}`,
     );
@@ -129,50 +116,10 @@ export class SecondarySalesService {
 
   // ─── Query Builder ────────────────────────────────────────────────────────
   private buildQuery(
-    query: SecondarySalesQueryDto,
+    query: PrimaryInvoicesQueryDto,
   ): SelectQueryBuilder<InvoiceHeader> {
     const qb = this.headerRepo
       .createQueryBuilder('header')
-      .innerJoinAndSelect('header.retailer', 'retailer')
-      .leftJoinAndSelect('header.salesman', 'salesman')
-      .innerJoinAndSelect('header.warehouse', 'warehouse')
-
-      // Retailer utama untuk cabang replacement.
-      .leftJoinAndMapOne(
-        'header.replacementRetailer',
-        Retailer,
-        'replacement',
-        `
-          "replacement"."arcode" = "retailer"."arcode"
-          AND "replacement"."isMainArcode" = :mainArcode
-          AND "retailer"."isSyncToIntegration" = :syncDisabled
-          AND "retailer"."isBPReplacement" = :replacementEnabled
-        `,
-        {
-          mainArcode: true,
-          syncDisabled: false,
-          replacementEnabled: 'Y',
-        },
-      )
-
-      // Rule berdasarkan retailer utama dan organisasi invoice.
-      .leftJoin(
-        RetailerRules,
-        'retailerRule',
-        `
-          retailerRule.retailerId = replacement.id
-          AND retailerRule.orgTrx = header.organization
-        `,
-      )
-
-      // Salesman untuk cabang replacement.
-      .leftJoinAndMapOne(
-        'header.replacementSalesman',
-        Salesman,
-        'replacementSalesman',
-        'replacementSalesman.id = retailerRule.salesmanId',
-      )
-
       .where('header.invoiceDate >= :dateFrom', {
         dateFrom: query.dateFrom,
       })
@@ -180,43 +127,12 @@ export class SecondarySalesService {
         dateTo: query.dateTo,
       })
       .andWhere('"header"."issotrx" = :isSoTrx', {
-        isSoTrx: true,
-      })
-      .andWhere('retailer.arcode IS NOT NULL')
-      .andWhere("TRIM(retailer.arcode) <> ''")
-      .andWhere(
-        new Brackets((conditions) => {
-          conditions
-            .where(
-              new Brackets((normal) => {
-                normal
-                  .where('"retailer"."isSyncToIntegration" = :syncEnabled')
-                  .andWhere('"retailer"."isBPReplacement" = :replacementDisabled')
-                  .andWhere('"salesman"."bpGroup" = :bpGroup');
-              }),
-            )
-            .orWhere(
-              new Brackets((replacement) => {
-                replacement
-                  .where('"retailer"."isSyncToIntegration" = :syncDisabled')
-                  .andWhere('"retailer"."isBPReplacement" = :replacementEnabled')
-                  .andWhere('"replacement"."id" IS NOT NULL')
-                  .andWhere('"replacementSalesman"."bpGroup" = :bpGroup');
-              }),
-            );
-        }),
-      )
-      .setParameters({
-        syncEnabled: true,
-        syncDisabled: false,
-        replacementEnabled: true,
-        replacementDisabled: false,
-        bpGroup: 'SALES SIGNIFY',
+        isSoTrx: false,
       });
 
-    if (SECONDARY_DOCTYPE_IDS.length > 0) {
-      qb.andWhere('header.c_doctype_id IN (:...secondaryDocTypes)', {
-        secondaryDocTypes: SECONDARY_DOCTYPE_IDS,
+    if (PRIMARY_DOCTYPE_IDS.length > 0) {
+      qb.andWhere('header.c_doctype_id IN (:...primaryDocTypes)', {
+        primaryDocTypes: PRIMARY_DOCTYPE_IDS,
       });
     } else {
       qb.andWhere('1 = 0');
@@ -227,72 +143,38 @@ export class SecondarySalesService {
 
   // ─── Mapper ke DTO ────────────────────────────────────────────────────────
   private toInvoiceDto(
-    header: ResolvedInvoiceHeader,
+    header,
     lines: InvoiceLine[],
-  ): SecondarySalesInvoiceDto {
-    const isReplacement = header.replacementRetailer != null;
-
-    const retailer = isReplacement
-      ? header.replacementRetailer
-      : header.retailer;
-
-    const salesman = isReplacement
-      ? header.replacementSalesman
-      : header.salesman;
-
-    return new SecondarySalesInvoiceDto({
-      // Identitas
+  ): PrimaryInvoicesDto {
+    return new PrimaryInvoicesDto({
       sellerErpId: header.sellerErpId,
       sellerName: header.organization,
-      orderNo: header.orderNo,
       invoiceDate: header.invoiceDate,
-      invoiceNo: header.invoiceNo,
-      warehouseErpId: header.organization ?? null,
-      status: header.status,
-
-      // Nilai invoice
+      erpInvoiceNo: header.invoiceNo,
       totalGrossValue: Number(header.totalGrossValue),
       totalDiscount: Number(header.totalDiscount),
       totalNetValue: Number(header.totalNetValue),
-      taxPercent: Number(header.taxPercent),
       taxValue: Number(header.taxValue),
       totalValue: Number(header.totalValue),
+      status: header.status,
       totalQuantity: lines.reduce(
         (sum, line) => sum + Number(line.invoicedQuantity),
         0,
       ),
-
-      remark: null,
-
-      // Salesman sesuai cabang normal / replacement.
-      esmErpId: salesman?.id ?? '',
-      esmName: salesman?.name ?? '',
-
-      // Retailer sesuai cabang normal / replacement.
-      retailerErpId: retailer?.value ?? '',
-      retailerName: retailer?.name ?? '',
-
       lines: lines.map((line) => this.toLineDto(line)),
     });
   }
 
-  private toLineDto(line: InvoiceLine): SecondarySalesLineDto {
-    return new SecondarySalesLineDto({
+  private toLineDto(line: InvoiceLine): PrimaryInvoiceLineDto {
+    return new PrimaryInvoiceLineDto({
       productErpId:     line.product?.code         ?? '',
       productName:      line.product?.name         ?? '',
       sapProductCode:   line.product?.partner_code ?? '',
-
       grossValue:       Number(line.grossValue),
       netValue:         Number(line.netValue),
       price:            Number(line.price),
       totalValue:       Number(line.netValue),
-
-      discount1Code:    line.discount1Code,
-      discount1Percent: Number(line.discount1Percent),
-
-      freeQty:          Number(line.freeQty),
       invoicedQuantity: Number(line.invoicedQuantity),
-      uom:              line.uom,
     });
   }
 

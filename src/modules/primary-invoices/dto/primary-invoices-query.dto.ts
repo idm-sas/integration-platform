@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class SecondarySalesQueryDto {
+export class PrimaryInvoicesQueryDto {
   // ── Mandatory ──────────────────────────────────────────────────────────────
   @IsDateString()
   @IsNotEmpty()
