@@ -55,6 +55,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuditLogMiddleware)
-      .forRoutes({ path: 'api/*', method: RequestMethod.ALL });
+      .forRoutes({ path: 'api/{*path}', method: RequestMethod.ALL });
   }
 }

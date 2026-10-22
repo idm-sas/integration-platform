@@ -3,7 +3,7 @@ import {
   HttpException, HttpStatus, Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'node:crypto';
 import { ERROR_MESSAGE } from '../constants/http-status.constant';
 
 @Catch()

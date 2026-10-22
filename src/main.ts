@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import * as compression from 'compression';
+import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
@@ -27,6 +27,9 @@ async function bootstrap() {
   // app.useLogger(app.get(PinoLogger));
 
   const config = app.get(ConfigService);
+
+  // Preserve Express 4 query parsing behavior after upgrading to Express 5.
+  app.getHttpAdapter().getInstance().set('query parser', 'extended');
 
   // Security
   app.use(helmet());
