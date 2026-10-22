@@ -15,6 +15,8 @@ import {
   IdempiereRetailerRulesRecord,
   IdempiereStockAdjustmentRecord,
   IdempiereStockTransferRecord,
+  IdempierePrimaryInvoicesRecord,
+  IdempiereChangedBPLocationRecord,
 } from './interfaces/idempiere-response.interface';
 import { 
   ALLOWED_LOCATOR_IDS, 
@@ -24,10 +26,12 @@ import {
 import { FULL_SYNC_DATE_FROM } from 'src/common/constants/date-sync.constant';
 import { ALLOWED_ORGTRX_IDS } from 'src/common/constants/organization.constant';
 import { 
+  PRIMARY_DOCTYPE_IDS,
   SECONDARY_DOCTYPE_IDS, 
   ADJUSTMENT_DOCTYPE_IDS,
   TRANSFER_DOCTYPE_IDS
 } from 'src/common/constants/doctype.constant';
+import { ALLOWED_BPARTNER_IDS } from 'src/common/constants/primary-invoices.constant';
 
 @Injectable()
 export class IdempiereService {
@@ -36,14 +40,26 @@ export class IdempiereService {
   private readonly defaultParams: Record<string, string>;
 
   constructor(private readonly configService: ConfigService) {
-    const token = this.configService.get<string>('idempiere.token');
+    const baseURL = this.configService
+        .get<string>('idempiere.baseUrl')
+        ?.trim();
+
+    const token = this.configService
+      .get<string>('idempiere.token')
+      ?.trim();
+
+    if (!baseURL || !token) {
+      throw new Error(
+        'Konfigurasi idempiere.baseUrl dan idempiere.token wajib diisi.',
+      );
+    }
 
     this.client = axios.create({
-      baseURL: this.configService.get<string>('idempiere.baseUrl'),
-      timeout: 120000,
+      baseURL,
+      timeout: 120_000,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -65,8 +81,9 @@ export class IdempiereService {
           );
         } else {
           this.logger.error(
-            `iDempiere error: ${err.response?.status} ${err.config?.url}`,
-            err.response?.data,
+            `iDempiere error: ` +
+              `${err.response?.status ?? err.code ?? 'UNKNOWN'} ` +
+              `${err.config?.url} | ${err.message}`,
           );
         }
         throw err;
@@ -95,7 +112,34 @@ export class IdempiereService {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        return await this.client.get<T>(endpoint, { params });
+        const startedAt = Date.now();
+
+        const requestConfig = {
+          url: endpoint,
+          method: 'GET' as const,
+          params,
+        };
+
+        const requestUrl = this.client.getUri(requestConfig);
+
+        // Tidak mencetak header Authorization.
+        this.logger.log(
+          `iDempiere GET | attempt=${attempt}/${maxAttempts} | ` +
+            `timeout=${this.client.defaults.timeout}ms | ` +
+            `url=${requestUrl}`,
+        );
+
+        const response = await this.client.get<T>(endpoint, {
+          params,
+        });
+
+        this.logger.log(
+          `iDempiere GET selesai | endpoint=${endpoint} | ` +
+            `status=${response.status} | ` +
+            `durationMs=${Date.now() - startedAt}`,
+        );
+
+        return response;
       } catch (error: unknown) {
         if (!axios.isAxiosError(error)) {
           throw error;
@@ -287,15 +331,44 @@ export class IdempiereService {
     endpoint: string,
     since: Date,
     extraParams: Record<string, any> = {},
+    pageSize = 100,
   ): Promise<T[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Checkpoint incremental tidak valid.');
+    }
+
+    // Mempertahankan format waktu WIB dari implementasi existing.
+    // Pastikan API memang menafsirkan timestamp tanpa zona sebagai WIB.
     const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-    const sinceWIB = new Date(since.getTime() + WIB_OFFSET_MS);
-    const sinceStr = sinceWIB.toISOString().replace('T', ' ').substring(0, 19);
-    return this.fetchAllPages<T>(endpoint, {
-      ...extraParams,
-      '$filter': `Updated gt '${sinceStr}'`,
-      '$orderby': 'Updated asc',
-    });
+
+    const sinceStr = new Date(
+      since.getTime() + WIB_OFFSET_MS,
+    )
+      .toISOString()
+      .replace('T', ' ')
+      .substring(0, 19);
+
+    const existingFilter = String(
+      extraParams['$filter'] ?? '',
+    ).trim();
+
+    // ge mengambil ulang batas detik checkpoint.
+    // Penyimpanan berdasarkan ID harus tetap idempotent.
+    const updatedFilter = `Updated ge '${sinceStr}'`;
+
+    const filter = existingFilter
+      ? `(${existingFilter}) and (${updatedFilter})`
+      : updatedFilter;
+
+    return this.fetchAllPages<T>(
+      endpoint,
+      {
+        ...extraParams,
+        '$filter': filter,
+        '$orderby': extraParams['$orderby'] ?? 'Updated asc',
+      },
+      pageSize,
+    );
   }
 
   // ─── Product Categories ───────────────────────────────────────────────────────
@@ -347,11 +420,16 @@ export class IdempiereService {
     );
   }
 
-  async getUpdatedPrices(since: Date): Promise<IdempierePriceRecord[]> {
+  async getUpdatedPrices(
+    since: Date,
+  ): Promise<IdempierePriceRecord[]> {
     return this.fetchUpdatedSince<IdempierePriceRecord>(
       '/api/v1/models/m_productprice',
       since,
-      { '$expand': 'M_Product_ID,M_PriceList_Version_ID' },
+      {
+        '$filter': 'M_PriceList_Version_ID eq 1000005',
+        '$expand': 'M_Product_ID,M_PriceList_Version_ID',
+      },
     );
   }
 
@@ -381,22 +459,89 @@ export class IdempiereService {
     return this.fetchAllPages<IdempiereRetailerRecord>(
       '/api/v1/models/c_bpartner',
       {
-        '$filter': "IsCustomer eq true and IsActive eq true and IsVendor eq false",
-        '$expand': 'C_BPartner_Location',
+        '$filter': "IsEmployee eq false and IsActive eq true",
+        '$expand': 'C_BPartner_Location($filter=IsActive eq true)',
         '$orderby': 'Value asc',
       },
     );
   }
 
-  async getUpdatedRetailers(since: Date): Promise<IdempiereRetailerRecord[]> {
+  async getUpdatedRetailers(
+    since: Date,
+  ): Promise<IdempiereRetailerRecord[]> {
     return this.fetchUpdatedSince<IdempiereRetailerRecord>(
       '/api/v1/models/c_bpartner',
       since,
       {
-        '$filter': "IsCustomer eq true and IsVendor eq false",
-        '$expand': 'C_BPartner_Location',
+        '$filter': [
+          'IsEmployee eq false',
+          '(IsActive eq true or IsActive eq false)',
+        ].join(' and '),
+
+        '$expand':
+          'C_BPartner_Location($filter=(IsActive eq true or IsActive eq false))',
+
+        '$orderby': 'Updated asc, C_BPartner_ID asc',
       },
+      20,
     );
+  }
+
+  async getUpdatedRetailerLocations(
+    since: Date,
+  ): Promise<IdempiereChangedBPLocationRecord[]> {
+    return this.fetchUpdatedSince<IdempiereChangedBPLocationRecord>(
+      '/api/v1/models/c_bpartner_location',
+      since,
+      {
+        '$filter': '(IsActive eq true or IsActive eq false)',
+        '$orderby': 'Updated asc, C_BPartner_Location_ID asc',
+      },
+      100,
+    );
+  }
+
+  async getRetailersByIds(
+    ids: number[],
+  ): Promise<IdempiereRetailerRecord[]> {
+    const uniqueIds = [...new Set(ids)];
+
+    if (
+      uniqueIds.some(
+        (id) => !Number.isSafeInteger(id) || id <= 0,
+      )
+    ) {
+      throw new Error('ID business partner tidak valid.');
+    }
+
+    const records: IdempiereRetailerRecord[] = [];
+    const batchSize = 10;
+
+    for (let i = 0; i < uniqueIds.length; i += batchSize) {
+      const batch = uniqueIds.slice(i, i + batchSize);
+
+      const idFilter = batch
+        .map((id) => `C_BPartner_ID eq ${id}`)
+        .join(' or ');
+
+      const rows = await this.fetchAllPages<IdempiereRetailerRecord>(
+        '/api/v1/models/c_bpartner',
+        {
+          '$filter': [
+            `(${idFilter})`,
+            'IsEmployee eq false',
+            '(IsActive eq true or IsActive eq false)',
+          ].join(' and '),
+          '$expand':
+            'C_BPartner_Location($filter=(IsActive eq true or IsActive eq false))',
+          '$orderby': 'C_BPartner_ID asc',
+        },
+      );
+
+      records.push(...rows);
+    }
+
+    return records;
   }
 
   async getAllRetailerRules(): Promise<IdempiereRetailerRulesRecord[]> {
@@ -410,11 +555,18 @@ export class IdempiereService {
     );
   }
 
-  async getUpdatedRetailerRules(since: Date): Promise<IdempiereRetailerRulesRecord[]> {
+  async getUpdatedRetailerRules(
+    since: Date,
+  ): Promise<IdempiereRetailerRulesRecord[]> {
     return this.fetchUpdatedSince<IdempiereRetailerRulesRecord>(
       '/api/v1/models/sas_bprule',
       since,
-      { '$expand': 'SalesRep_ID' },
+      {
+        '$filter': '(IsActive eq true or IsActive eq false)',
+        '$expand': 'SalesRep_ID',
+        '$orderby': 'Updated asc, SAS_BPRule_ID asc',
+      },
+      100,
     );
   }
 

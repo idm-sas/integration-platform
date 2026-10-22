@@ -95,13 +95,23 @@ export interface IdempiereRetailerRecord extends IdempiereRecord {
   Name: string;
   Name2?: string;
   IsCustomer?: boolean;
+  IsVendor?: boolean;
   IsActive: boolean;
   C_BP_Group_ID?: { id: number; identifier: string };
   C_BPartner_Location?: IdempiereCBPLocationRecord[];
   Updated: string;
   Created: string;
-  Arcode: string;
   IsSyncToIntegration: boolean;
+  IsBPReplacement: boolean;
+}
+
+export interface IdempiereChangedBPLocationRecord extends IdempiereRecord {
+  C_BPartner_ID: {
+    id: number;
+    identifier?: string;
+  };
+  IsActive: boolean;
+  Updated: string;
 }
 export interface IdempiereRetailerRulesRecord extends IdempiereRecord {
   C_BPartner_ID: { id: number; identifier: string };

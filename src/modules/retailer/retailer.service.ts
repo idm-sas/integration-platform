@@ -81,11 +81,13 @@ export class RetailerService {
     // Filter by allowed categories dari scope token
     if (allowedCats !== null && allowedCats.length > 0) {
       qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats })
-        .andWhere("retailer.name NOT LIKE '[LA]%'")
-        .andWhere("retailer.location NOT LIKE '[LA]%'")
         .andWhere('salesman.bpGroup = :bpGroup', { bpGroup: 'SALES SIGNIFY' })
-        .andWhere("retailer.arcode IS NOT NULL")
+        .andWhere("retailer.isCustomer = true")
+        .andWhere("retailer.isVendor = false")
         .andWhere("retailer.isSyncToIntegration = true")
+        .andWhere("retailer.isBPReplacement = false")
+        .andWhere("retailer.arcode IS NOT NULL")
+        .andWhere("TRIM(retailer.arcode) <> ''")
         .andWhere("retailer.isBillTo = true");
     }
 

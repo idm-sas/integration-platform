@@ -64,6 +64,9 @@ export class Retailer {
   @Column({ nullable: true })
   arcode: string;
 
+  @Column({ type: 'boolean', default: false })
+  isVendor: boolean;
+
   @Column({ default: true })
   isCustomer: boolean;
 
@@ -84,6 +87,12 @@ export class Retailer {
 
   @Column({ default: false })
   isSyncToIntegration: boolean;
+
+  @Column({ type: 'integer', nullable: true })
+  locationIdempiereId: number | null;
+
+  @Column({ type: 'boolean', default: false })
+  isLocationActive: boolean;
 
   @Column({ default: false })
   isShipTo: boolean;
