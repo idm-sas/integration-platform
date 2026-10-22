@@ -1,3 +1,7 @@
+export const PRIMARY_DOCTYPE_IDS = [
+  1000005,  // IVA
+];
+
 export const SECONDARY_DOCTYPE_IDS = [
   1000002,  // FKN
   1000003,  // FKT

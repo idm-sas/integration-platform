@@ -26,6 +26,7 @@ import { StockAdjustmentSyncService } from './sync/stock-adjustment-sync.service
 import { StockTransfer } from 'src/database/entities/stock-transfer.entity';
 import { StockTransferLine } from 'src/database/entities/stock-transfer-line.entity';
 import { StockTransferSyncService } from './sync/stock-transfer-sync.service';
+import { PrimaryInvoicesSyncService } from './sync/primary-invoices-sync.service';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { StockTransferSyncService } from './sync/stock-transfer-sync.service';
     SecondarySalesSyncService,
     StockAdjustmentSyncService,
     StockTransferSyncService,
+    PrimaryInvoicesSyncService,
     SyncOrchestratorService,
   ],
   exports: [
@@ -69,7 +71,7 @@ import { StockTransferSyncService } from './sync/stock-transfer-sync.service';
     StockAdjustmentSyncService,
     StockTransferSyncService,
     InventoryStockSyncService,
-    SecondarySalesSyncService,
+    PrimaryInvoicesSyncService,
     SyncOrchestratorService,
   ],
 })

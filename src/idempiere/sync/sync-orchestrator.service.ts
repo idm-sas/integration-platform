@@ -9,6 +9,7 @@ import { InventoryStockSyncService } from './inventory-stock-sync.service';
 import { SecondarySalesSyncService } from './secondary-sales-sync.service';
 import { StockAdjustmentSyncService } from './stock-adjustment-sync.service';
 import { StockTransferSyncService } from './stock-transfer-sync.service';
+import { PrimaryInvoicesSyncService } from './primary-invoices-sync.service';
 
 @Injectable()
 export class SyncOrchestratorService implements OnApplicationBootstrap {
@@ -30,6 +31,7 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     private readonly secondarySalesSyncService: SecondarySalesSyncService,
     private readonly stockAdjustmentSyncService: StockAdjustmentSyncService,
     private readonly stockTransferSyncService: StockTransferSyncService,
+    private readonly primaryInvoicesSyncService: PrimaryInvoicesSyncService,
   ) {}
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────────
@@ -90,18 +92,19 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     const results: SyncResult[] = [];
 
     try {
-      results.push(await this.productSyncService.syncCategories('full'));
-      results.push(await this.salesmanSyncService.syncSalesmen('full'));
-      results.push(await this.warehouseSyncService.syncWarehouses('full'));
-      results.push(await this.warehouseSyncService.syncLocators('full'));
-      results.push(await this.retailerSyncService.syncRetailers('full'));
-      results.push(await this.retailerSyncService.syncRetailerRules('full'));
-      results.push(await this.productSyncService.syncProducts('full'));
-      results.push(await this.productSyncService.syncPrices('full'));
-      results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
-      results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
-      results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('full'));
-      results.push(await this.stockTransferSyncService.syncStockTransfers('full'));
+      // results.push(await this.productSyncService.syncCategories('full'));
+      // results.push(await this.salesmanSyncService.syncSalesmen('full'));
+      // results.push(await this.warehouseSyncService.syncWarehouses('full'));
+      // results.push(await this.warehouseSyncService.syncLocators('full'));
+      // results.push(await this.retailerSyncService.syncRetailers('full'));
+      // results.push(await this.retailerSyncService.syncRetailerRules('full'));
+      // results.push(await this.productSyncService.syncProducts('full'));
+      // results.push(await this.productSyncService.syncPrices('full'));
+      // results.push(await this.inventoryStockSyncService.syncInventoryStocks('full'));
+      // results.push(await this.secondarySalesSyncService.syncSecondarySales('full'));
+      // results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('full'));
+      // results.push(await this.stockTransferSyncService.syncStockTransfers('full'));
+      results.push(await this.primaryInvoicesSyncService.syncPrimaryInvoices('full'));
 
       this.syncStatus.lastFullSync = new Date();
 
@@ -140,18 +143,19 @@ export class SyncOrchestratorService implements OnApplicationBootstrap {
     const results: SyncResult[] = [];
 
     try {
-      results.push(await this.productSyncService.syncCategories('incremental', since));
-      results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
-      results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
-      results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
-      results.push(await this.retailerSyncService.syncRetailers('incremental', since));
-      results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
-      results.push(await this.productSyncService.syncProducts('incremental', since));
-      results.push(await this.productSyncService.syncPrices('incremental', since));
-      results.push(await this.inventoryStockSyncService.syncInventoryStocks('incremental', since));
-      results.push(await this.secondarySalesSyncService.syncSecondarySales('incremental', since));
-      results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('incremental', since));
-      results.push(await this.stockTransferSyncService.syncStockTransfers('incremental', since));
+      // results.push(await this.productSyncService.syncCategories('incremental', since));
+      // results.push(await this.salesmanSyncService.syncSalesmen('incremental', since));
+      // results.push(await this.warehouseSyncService.syncWarehouses('incremental', since));
+      // results.push(await this.warehouseSyncService.syncLocators('incremental', since)); 
+      // results.push(await this.retailerSyncService.syncRetailers('incremental', since));
+      // results.push(await this.retailerSyncService.syncRetailerRules('incremental', since));
+      // results.push(await this.productSyncService.syncProducts('incremental', since));
+      // results.push(await this.productSyncService.syncPrices('incremental', since));
+      // results.push(await this.inventoryStockSyncService.syncInventoryStocks('incremental', since));
+      // results.push(await this.secondarySalesSyncService.syncSecondarySales('incremental', since));
+      // results.push(await this.stockAdjustmentSyncService.syncStockAdjustments('incremental', since));
+      // results.push(await this.stockTransferSyncService.syncStockTransfers('incremental', since));
+      results.push(await this.primaryInvoicesSyncService.syncPrimaryInvoices('incremental', since));
       
       this.syncStatus.lastIncrementalSync = new Date();
 

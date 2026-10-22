@@ -370,3 +370,66 @@ export interface IdempiereStockTransferLineRecord extends IdempiereRecord {
   Created: string;
   Updated: string;
 }
+
+
+export interface IdempierePrimaryInvoicesRecord extends IdempiereRecord {
+  AD_Org_ID: {
+    id: number;
+    identifier: string;
+  };
+  AD_OrgTrx_ID: {
+    id: number;
+    identifier: string;
+  };
+  DocumentNo: string;
+  DateInvoiced: string;
+  DocStatus: {
+    id: number;
+    identifier: string;
+  };
+  C_Order_ID?: {
+    id: number;
+    DocumentNo: string;
+    M_Warehouse_ID?: {
+      id: number;
+    } | null;
+  } | null;
+  C_BPartner_ID: {
+    id: number;
+    Value: string;
+  };
+  TotalLines: number;
+  GrandTotal: number;
+  IsTaxIncluded: boolean;
+  Description?: string | null;
+  IsSOTrx: boolean;
+  C_DocType_ID: {
+    id: number;
+  };
+  Created: string;
+  Updated: string;
+  C_InvoiceLine: IdempierePrimaryInvoicesLineRecord[];
+}
+
+export interface IdempierePrimaryInvoicesLineRecord
+  extends IdempiereRecord {
+  IsDescription: boolean;
+  M_Product_ID?: {
+    id: number;
+  } | null;
+  PriceList: number;
+  PriceActual: number;
+  LineNetAmt: number;
+  QtyInvoiced: number;
+  C_UOM_ID: {
+    id: number;
+    identifier: string;
+  };
+  TaxAmt: number;
+  C_Tax_ID?: {
+    id: number;
+  } | null;
+  Description?: string | null;
+  Created: string;
+  Updated: string;
+}

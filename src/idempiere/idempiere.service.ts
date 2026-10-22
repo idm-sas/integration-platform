@@ -1001,4 +1001,93 @@ export class IdempiereService {
       100,
     );
   }
+
+  async getAllPrimaryInvoices(
+    dateFrom: string,
+    dateTo: string,
+  ): Promise<IdempierePrimaryInvoicesRecord[]> {
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+    
+    const docTypeFilter = PRIMARY_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const bpartnerFilter = ALLOWED_BPARTNER_IDS
+      .map((id) => `C_BPartner_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempierePrimaryInvoicesRecord>(
+      '/api/v1/models/c_invoice',
+      {
+        '$expand': 'C_InvoiceLine($expand=C_OrderLine_ID),C_Order_ID,C_BPartner_ID',
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `(${bpartnerFilter})`,
+          `DateInvoiced ge '${dateFrom}'`,
+          `DateInvoiced le '${dateTo}'`,
+        ].join(' and '),
+        '$orderby': 'DateInvoiced desc',
+      },
+      100,
+    );
+  }
+
+  async getUpdatedPrimaryInvoices(
+    since: Date,
+  ): Promise<IdempierePrimaryInvoicesRecord[]> {
+    if (!(since instanceof Date) || Number.isNaN(since.getTime())) {
+      throw new Error('Parameter since wajib berupa Date yang valid.');
+    }
+
+    if (
+      ALLOWED_ORGTRX_IDS.length === 0 ||
+      PRIMARY_DOCTYPE_IDS.length === 0
+    ) {
+      return [];
+    }
+
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+    // Ambil ulang sejak awal hari WIB dari checkpoint.
+    const updatedFrom = new Date(
+      since.getTime() + WIB_OFFSET_MS,
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const orgTrxFilter = ALLOWED_ORGTRX_IDS
+      .map((id) => `AD_OrgTrx_ID eq ${id}`)
+      .join(' or ');
+
+    const docTypeFilter = PRIMARY_DOCTYPE_IDS
+      .map((id) => `C_DocType_ID eq ${id}`)
+      .join(' or ');
+
+    const bpartnerFilter = ALLOWED_BPARTNER_IDS
+      .map((id) => `C_BPartner_ID eq ${id}`)
+      .join(' or ');
+
+    return this.fetchAllPages<IdempierePrimaryInvoicesRecord>(
+      '/api/v1/models/c_invoice',
+      {
+        '$expand':
+          'C_InvoiceLine($expand=C_OrderLine_ID),' +
+          'C_Order_ID,C_BPartner_ID',
+
+        '$filter': [
+          `(${orgTrxFilter})`,
+          `(${docTypeFilter})`,
+          `(${bpartnerFilter})`,
+          `DateInvoiced ge '${FULL_SYNC_DATE_FROM}'`,
+          `Updated ge '${updatedFrom}'`,
+        ].join(' and '),
+
+        '$orderby': 'Updated asc,C_Invoice_ID asc',
+      },
+      100,
+    );
+  }
 }
