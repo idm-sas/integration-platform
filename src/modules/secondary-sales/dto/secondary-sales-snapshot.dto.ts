@@ -68,6 +68,9 @@ export class SecondarySalesInvoiceDto {
   @ApiProperty({ example: 675405.41 })
   totalGrossValue!: number;
 
+  @ApiProperty({ example: 675405.41 })
+  totalCashDiscountValue!: number;
+
   @ApiProperty({ example: 'CO' })
   status!: string;
 

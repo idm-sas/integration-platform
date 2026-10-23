@@ -250,6 +250,7 @@ export class SecondarySalesService {
 
       // Nilai invoice
       totalGrossValue: Number(header.totalGrossValue),
+      totalCashDiscountValue: Number(header.totalCashDiscountValue),
       totalDiscount: Number(header.totalDiscount),
       totalNetValue: Number(header.totalNetValue),
       taxPercent: Number(header.taxPercent),
