@@ -40,7 +40,7 @@ import { ALLOWED_BPARTNER_IDS } from 'src/common/constants/primary-invoices.cons
  * Deletions / records leaving filters require separate reconciliation.
  */
 const CURSOR_COLUMNS: Readonly<Record<string, string>> = {
-  '/api/v1/models/m_storageonhand': 'M_StorageOnHand_ID',
+  // '/api/v1/models/m_storageonhand': 'M_StorageOnHand_ID',
   '/api/v1/models/c_invoice': 'C_Invoice_ID',
   '/api/v1/models/m_product_category': 'M_Product_Category_ID',
   '/api/v1/models/m_product': 'M_Product_ID',
@@ -817,7 +817,7 @@ export class IdempiereService {
           // Sertakan tanggal lama untuk kebutuhan fallback.
           `DateMaterialPolicy lt '${dateToExclusive}'`,
         ].join(' and '),
-        '$orderby': 'M_Locator_ID asc,M_StorageOnHand_ID asc',
+        '$orderby': 'M_Locator_ID asc asc',
       },
       100,
     );
@@ -852,7 +852,7 @@ export class IdempiereService {
             `(${locatorFilter})`,
             `Updated ge '${updatedFrom}'`,
           ].join(' and '),
-          '$orderby': 'Updated asc,M_StorageOnHand_ID asc',
+          '$orderby': 'Updated asc asc',
         },
         100,
       );
@@ -892,7 +892,7 @@ export class IdempiereService {
               `(${locatorFilter})`,
               `(${productFilter})`,
             ].join(' and '),
-            '$orderby': 'M_Locator_ID asc,M_StorageOnHand_ID asc',
+            '$orderby': 'M_Locator_ID asc asc',
           },
           100,
         );
