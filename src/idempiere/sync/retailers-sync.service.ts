@@ -61,100 +61,7 @@ export class RetailersSyncService extends BaseSyncService {
 
       for (const record of records) {
         try {
-          const idempiereId = Number(record.id);
-
-          if (
-            !Number.isSafeInteger(idempiereId) ||
-            idempiereId <= 0
-          ) {
-            throw new Error('ID business partner tidak valid.');
-          }
-
-          const existing = await this.retailerRepo.findOne({
-            where: { idempiereId },
-          });
-
-          const value = record.Value?.trim();
-          const name = record.Name?.trim();
-
-          if (!value || !name) {
-            throw new Error(
-              'Value dan Name business partner wajib tersedia.',
-            );
-          }
-
-          const isActive = this.toBoolean(record.IsActive);
-
-          // Partner nonaktif yang belum pernah disimpan diabaikan.
-          // Partner existing tetap diperbarui ketika menjadi nonaktif.
-          if (!existing && !isActive) {
-            result.skipped++;
-            continue;
-          }
-
-          if (!Array.isArray(record.C_BPartner_Location)) {
-            throw new Error(
-              'Expand C_BPartner_Location tidak tersedia.',
-            );
-          }
-
-          const selectedLocation = this.selectRetailerLocation(
-            record.C_BPartner_Location,
-            existing,
-          );
-
-          const data: Partial<Retailer> = {
-            idempiereId,
-            value,
-            name,
-
-            name2: record.Name2 ?? '',
-            bpGroup: record.C_BP_Group_ID?.identifier ?? '',
-
-            isCustomer: this.toBoolean(record.IsCustomer),
-            isVendor: this.toBoolean(record.IsVendor),
-            isActive,
-
-            isSyncToIntegration: this.toBoolean(
-              record.IsSyncToIntegration,
-            ),
-            isBPReplacement: this.toBoolean(
-              record.IsBPReplacement,
-            ),
-
-            ...this.mapRetailerLocation(selectedLocation),
-          };
-
-          if (!existing) {
-            await this.retailerRepo.save(
-              this.retailerRepo.create({
-                ...data,
-                syncedAt: new Date(),
-              }),
-            );
-
-            result.created++;
-            continue;
-          }
-
-          const hasChange = (
-            Object.keys(data) as Array<keyof Retailer>
-          ).some((field) => existing[field] !== data[field]);
-
-          if (hasChange) {
-            await this.retailerRepo.update(existing.id, {
-              ...data,
-              syncedAt: new Date(),
-            });
-
-            result.updated++;
-          } else {
-            await this.retailerRepo.update(existing.id, {
-              syncedAt: new Date(),
-            });
-
-            result.skipped++;
-          }
+          await this.syncRetailerLocations(record);
         } catch (err: unknown) {
           result.failed++;
 
@@ -655,5 +562,110 @@ export class RetailersSyncService extends BaseSyncService {
 
   private getSyncErrorMessage(err: unknown): string {
     return err instanceof Error ? err.message : String(err);
+  }
+
+  private async syncRetailerLocations(
+    record: IdempiereRetailerRecord,
+  ): Promise<void> {
+    const idempiereId = Number(record.id);
+    const value = record.Value?.trim();
+    const name = record.Name?.trim();
+
+    if (!Number.isSafeInteger(idempiereId) || idempiereId <= 0) {
+      throw new Error('ID business partner tidak valid.');
+    }
+
+    if (!value || !name) {
+      throw new Error('Value dan Name business partner wajib tersedia.');
+    }
+
+    const locations = record.C_BPartner_Location;
+
+    if (!Array.isArray(locations)) {
+      throw new Error('Expand C_BPartner_Location tidak tersedia.');
+    }
+
+    // Validasi sebelum menulis data.
+    const mappedLocations = locations.map((location) =>
+      this.mapRetailerLocation(location),
+    );
+
+    const locationIds = mappedLocations.map(
+      (location) => location.locationIdempiereId,
+    );
+
+    if (new Set(locationIds).size !== locationIds.length) {
+      throw new Error(`API mengembalikan ID lokasi duplikat untuk BP ${value}.`);
+    }
+
+    await this.retailerRepo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(Retailer);
+      const existingRows = await repo.find({
+        where: { idempiereId },
+      });
+
+      const byLocation = new Map<number, Retailer>();
+
+      for (const existing of existingRows) {
+        let locationId = existing.locationIdempiereId;
+
+        // Pertahankan UUID lama agar relasi yang sudah ada tidak terputus.
+        if (locationId == null) {
+          const candidates = locations.filter((location) => {
+            const hasIdentity = Boolean(existing.location || existing.arcode);
+
+            return (
+              hasIdentity &&
+              (!existing.location || location.Name === existing.location) &&
+              (!existing.arcode ||
+                location.ExternalReference === existing.arcode)
+            );
+          });
+
+          if (candidates.length !== 1) {
+            throw new Error(
+              `Lokasi baris lama BP ${value} belum bisa dicocokkan. ` +
+                `Isi locationIdempiereId untuk retailer ${existing.id}.`,
+            );
+          }
+
+          locationId = Number(candidates[0].id);
+        }
+
+        const key = Number(locationId);
+
+        if (byLocation.has(key)) {
+          throw new Error(`Duplikasi retailer BP ${value}, lokasi ${key}.`);
+        }
+
+        byLocation.set(key, existing);
+      }
+
+      for (const locationData of mappedLocations) {
+        const locationId = Number(locationData.locationIdempiereId);
+        const existing = byLocation.get(locationId);
+
+        const data: Partial<Retailer> = {
+          idempiereId,
+          value,
+          name,
+          name2: record.Name2 ?? '',
+          bpGroup: record.C_BP_Group_ID?.identifier ?? '',
+          isCustomer: this.toBoolean(record.IsCustomer),
+          isVendor: this.toBoolean(record.IsVendor),
+          isActive: this.toBoolean(record.IsActive),
+          isSyncToIntegration: this.toBoolean(record.IsSyncToIntegration),
+          isBPReplacement: this.toBoolean(record.IsBPReplacement),
+          ...locationData,
+          syncedAt: new Date(),
+        };
+
+        if (existing) {
+          await repo.update(existing.id, data);
+        } else {
+          await repo.save(repo.create(data));
+        }
+      }
+    });
   }
 }

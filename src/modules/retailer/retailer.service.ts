@@ -88,7 +88,7 @@ export class RetailerService {
         .andWhere("retailer.isBPReplacement = false")
         .andWhere("retailer.arcode IS NOT NULL")
         .andWhere("TRIM(retailer.arcode) <> ''")
-        .andWhere("retailer.isBillTo = true");
+        .andWhere("retailer.isMainArcode = true");
     }
 
     if (query.isActive !== undefined) {
