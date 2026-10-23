@@ -160,8 +160,8 @@ export class SecondarySalesService {
         RetailerRules,
         'retailerRule',
         `
-          retailerRule.retailerId = replacement.id
-          AND retailerRule.orgTrx = header.sellerErpId
+          "retailerRule"."retailerId" = "replacement"."id"
+          AND "retailerRule"."orgTrx" = "header"."sellerErpId"
         `,
       )
 
