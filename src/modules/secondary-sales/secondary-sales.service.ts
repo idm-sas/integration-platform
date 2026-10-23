@@ -161,7 +161,7 @@ export class SecondarySalesService {
         'retailerRule',
         `
           retailerRule.retailerId = replacement.id
-          AND retailerRule.orgTrx = header.organization
+          AND retailerRule.orgTrx = header.sellerErpId
         `,
       )
 
@@ -199,9 +199,7 @@ export class SecondarySalesService {
               new Brackets((replacement) => {
                 replacement
                   .where('"retailer"."isSyncToIntegration" = :syncDisabled')
-                  .andWhere('"retailer"."isBPReplacement" = :replacementEnabled')
-                  .andWhere('"replacement"."id" IS NOT NULL')
-                  .andWhere('"replacementSalesman"."bpGroup" = :bpGroup');
+                  .andWhere('"retailer"."isBPReplacement" = :replacementEnabled');
               }),
             );
         }),
