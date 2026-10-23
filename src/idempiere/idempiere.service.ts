@@ -817,7 +817,7 @@ export class IdempiereService {
           // Sertakan tanggal lama untuk kebutuhan fallback.
           `DateMaterialPolicy lt '${dateToExclusive}'`,
         ].join(' and '),
-        '$orderby': 'M_Locator_ID asc asc',
+        '$orderby': 'M_Locator_ID asc,M_Product_ID asc,M_AttributeSetInstance_ID asc,DateMaterialPolicy asc',
       },
       100,
     );
@@ -852,7 +852,7 @@ export class IdempiereService {
             `(${locatorFilter})`,
             `Updated ge '${updatedFrom}'`,
           ].join(' and '),
-          '$orderby': 'Updated asc asc',
+          '$orderby': 'Updated asc,M_Locator_ID asc,M_Product_ID asc,M_AttributeSetInstance_ID asc,DateMaterialPolicy asc',
         },
         100,
       );
@@ -892,7 +892,7 @@ export class IdempiereService {
               `(${locatorFilter})`,
               `(${productFilter})`,
             ].join(' and '),
-            '$orderby': 'M_Locator_ID asc asc',
+            '$orderby': 'M_Locator_ID asc,M_Product_ID asc,M_AttributeSetInstance_ID asc,DateMaterialPolicy asc',
           },
           100,
         );
