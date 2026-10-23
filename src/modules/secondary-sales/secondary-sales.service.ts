@@ -151,7 +151,7 @@ export class SecondarySalesService {
         {
           mainArcode: true,
           syncDisabled: false,
-          replacementEnabled: 'Y',
+          replacementEnabled: true,
         },
       )
 
@@ -192,6 +192,7 @@ export class SecondarySalesService {
                 normal
                   .where('"retailer"."isSyncToIntegration" = :syncEnabled')
                   .andWhere('"retailer"."isBPReplacement" = :replacementDisabled')
+                  .andWhere('"retailer"."isMainArcode" IS TRUE')
                   .andWhere('"salesman"."bpGroup" = :bpGroup');
               }),
             )
@@ -199,7 +200,9 @@ export class SecondarySalesService {
               new Brackets((replacement) => {
                 replacement
                   .where('"retailer"."isSyncToIntegration" = :syncDisabled')
-                  .andWhere('"retailer"."isBPReplacement" = :replacementEnabled');
+                  .andWhere('"retailer"."isBPReplacement" = :replacementEnabled')
+                  .andWhere('"replacement"."id" IS NOT NULL')
+                  .andWhere('"replacement"."isMainArcode" IS TRUE');
               }),
             );
         }),
