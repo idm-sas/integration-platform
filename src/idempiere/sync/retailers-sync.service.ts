@@ -445,7 +445,7 @@ export class RetailersSyncService extends BaseSyncService {
 
       isShipTo: this.toBoolean(location.IsShipTo),
       isBillTo: this.toBoolean(location.IsBillTo),
-      isMainArcode: this.toBoolean(location.IsMainARcode),
+      isMainArcode: this.toBoolean(location.IsMainARCode),
     };
   }
 
