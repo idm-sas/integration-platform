@@ -88,7 +88,7 @@ export interface IdempiereCBPLocationRecord {
   IsActive: boolean;
   IsShipTo: boolean;
   IsBillTo: boolean;
-  IsMainArcode: boolean;
+  IsMainARCode: boolean;
 }
 export interface IdempiereRetailerRecord extends IdempiereRecord {
   Value: string;
