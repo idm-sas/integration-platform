@@ -420,6 +420,7 @@ export class RetailersSyncService extends BaseSyncService {
             this.retailerRepo.findOne({
               where: {
                 idempiereId: retailerIdempiereId,
+                isMainArcode: true,
               },
             }),
 
