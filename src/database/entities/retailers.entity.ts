@@ -2,8 +2,15 @@ import {
   Entity, PrimaryGeneratedColumn, Column,
   CreateDateColumn, UpdateDateColumn,
   OneToMany,
+  Unique
 } from 'typeorm';
 import { RetailerRules } from './retailer-rules.entity';
+
+@Entity('retailers')
+@Unique('UQ_retailers_bp_location', [
+  'idempiereId',
+  'locationIdempiereId',
+])
 
 @Entity('retailers')
 export class Retailer {
@@ -11,7 +18,7 @@ export class Retailer {
   id: string;
 
   /** C_BPartner.C_BPartner_ID dari iDempiere */
-  @Column({ unique: true })
+  @Column({ type: 'integer', unique: true })
   idempiereId: number;
 
   /** C_BPartner.Value */
