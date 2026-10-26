@@ -22,7 +22,7 @@ export class Retailer {
   idempiereId: number;
 
   /** C_BPartner.Value */
-  @Column({ unique: true })
+  @Column({ nullable: true })
   value: string;
 
   /** C_BPartner.Name */
