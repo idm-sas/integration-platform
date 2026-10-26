@@ -581,6 +581,7 @@ export class IdempiereService {
       '/api/v1/models/m_product',
       {
         '$orderby': 'Value asc',
+        '$filter': '(IsActive eq true or IsActive eq false)',
         '$expand': 'M_Product_Category_ID,C_UOM_ID',
       },
     );
@@ -590,7 +591,10 @@ export class IdempiereService {
     return this.fetchUpdatedSince<IdempiereProductRecord>(
       '/api/v1/models/m_product',
       since,
-      { '$expand': 'M_Product_Category_ID,C_UOM_ID' },
+      { 
+        '$expand': 'M_Product_Category_ID,C_UOM_ID',
+        '$filter': '(IsActive eq true or IsActive eq false)',
+      },
     );
   }
   // ─── Product Prices ───────────────────────────────────────────────────────────
