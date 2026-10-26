@@ -67,9 +67,43 @@ export class InventoryService {
       `Inventory snapshot | dateFrom: ${dateFrom} | dateTo: ${dateTo} | page: ${page} | principal: ${principal.sub}`,
     );
 
+    const dateParams = { dateFrom, dateTo };
+
+    // Ambil semua baris dalam rentang.
+    // Jika tidak ada untuk produk + warehouse tersebut,
+    // ambil semua baris pada tanggal terakhir sebelum dateFrom.
+    const stockDateFilter = `
+      (
+        (
+          "stock"."dateMaterialPolicy" >= CAST(:dateFrom AS date)
+          AND "stock"."dateMaterialPolicy" <
+              CAST(:dateTo AS date) + INTERVAL '1 day'
+        )
+        OR
+        (
+          NOT EXISTS (
+            SELECT 1
+            FROM inventory_stocks range_stock
+            WHERE range_stock."productId" = "stock"."productId"
+              AND range_stock."warehouseId" = "stock"."warehouseId"
+              AND range_stock."dateMaterialPolicy" >= CAST(:dateFrom AS date)
+              AND range_stock."dateMaterialPolicy" <
+                  CAST(:dateTo AS date) + INTERVAL '1 day'
+          )
+          AND CAST("stock"."dateMaterialPolicy" AS date) = (
+            SELECT MAX(CAST(previous_stock."dateMaterialPolicy" AS date))
+            FROM inventory_stocks previous_stock
+            WHERE previous_stock."productId" = "stock"."productId"
+              AND previous_stock."warehouseId" = "stock"."warehouseId"
+              AND previous_stock."dateMaterialPolicy" < CAST(:dateFrom AS date)
+          )
+        )
+      )
+    `;
+
     // 1. Ambil warehouse yang memiliki stok dan produk
     // dalam rentang tanggal. Urutkan sebelum pagination.
-    const warehouseQb = this.stockRepo
+   const warehouseQb = this.stockRepo
       .createQueryBuilder('stock')
       .innerJoin('stock.warehouse', 'warehouse')
       .innerJoin('stock.product', 'product')
@@ -78,12 +112,7 @@ export class InventoryService {
       .addSelect('warehouse.name', 'warehouseName')
       .addSelect('warehouse.organization', 'organization')
       .distinct(true)
-      .where('stock.dateMaterialPolicy >= :dateFrom', {
-        dateFrom,
-      })
-      .andWhere('stock.dateMaterialPolicy <= :dateTo', {
-        dateTo,
-      });
+      .where(stockDateFilter, dateParams);
 
     this.applyProductAccess(warehouseQb, allowedCats);
 
@@ -157,12 +186,7 @@ export class InventoryService {
       .innerJoin('stock.warehouse', 'warehouse')
       .innerJoin('stock.product', 'product')
       .leftJoin('product.category', 'category')
-      .where('stock.dateMaterialPolicy >= :dateFrom', {
-        dateFrom,
-      })
-      .andWhere('stock.dateMaterialPolicy <= :dateTo', {
-        dateTo,
-      });
+      .where(stockDateFilter, dateParams);
 
     this.applyProductAccess(totalItemsQb, allowedCats);
 
@@ -188,31 +212,31 @@ export class InventoryService {
     // Map stok ke product.stocks tanpa memerlukan
     // deklarasi relasi stocks pada entity Product.
     const productsQb = this.productRepo
-        .createQueryBuilder('product')
-        .leftJoin('product.category', 'category')
-        .leftJoinAndMapMany(
-          'product.stocks',
-          InventoryStock,
-          'stock',
-          `stock.productId = product.id
-          AND stock.dateMaterialPolicy >= :dateFrom
-          AND stock.dateMaterialPolicy <= :dateTo
-          AND stock.warehouseId IN (:...warehouseIds)`,
-          {
-            dateFrom,
-            dateTo,
-            warehouseIds,
-          },
-        )
-        .leftJoinAndSelect('stock.warehouse', 'warehouse')
-        .where('1 = 1');
+      .createQueryBuilder('product')
+      .leftJoin('product.category', 'category')
+      .innerJoinAndMapMany(
+        'product.stocks',
+        InventoryStock,
+        'stock',
+        `
+          "stock"."productId" = "product"."id"
+          AND "stock"."warehouseId" IN (:...warehouseIds)
+          AND ${stockDateFilter}
+        `,
+        {
+          ...dateParams,
+          warehouseIds,
+        },
+      )
+      .leftJoinAndSelect('stock.warehouse', 'warehouse')
+      .where('1 = 1');
 
-      this.applyProductAccess(productsQb, allowedCats);
+    this.applyProductAccess(productsQb, allowedCats);
 
-      const products = (await productsQb
-        .orderBy('product.code', 'ASC')
-        .addOrderBy('product.id', 'ASC')
-        .getMany()) as ProductWithStocks[];
+    const products = (await productsQb
+      .orderBy('product.code', 'ASC')
+      .addOrderBy('product.id', 'ASC')
+      .getMany()) as ProductWithStocks[];
 
     // 5. Siapkan group mengikuti urutan pagination warehouse.
     const warehouseMap = new Map<string, WarehouseGroup>();
