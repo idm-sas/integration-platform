@@ -123,80 +123,29 @@ export class RetailersSyncService extends BaseSyncService {
         refreshIds.add(Number(partner.idempiereId));
       }
     } else {
-      // Perubahan lokasi belum tentu mengubah Updated partner.
       const changedLocations =
-        await this.idempiereService.getUpdatedRetailerLocations(
-          since!,
-        );
+      await this.idempiereService.getUpdatedRetailerLocations(since!);
 
-      const changedPartnerIds = [
-        ...new Set(
-          changedLocations.map((location) =>
-            Number(location.C_BPartner_ID?.id),
-          ),
-        ),
-      ];
+      // Setiap lokasi yang berubah memicu pengambilan ulang BP,
+      // termasuk lokasi nonaktif.
+      for (const location of changedLocations) {
+        const partnerId = Number(location.C_BPartner_ID?.id);
 
-      if (
-        changedPartnerIds.some(
-          (id) => !Number.isSafeInteger(id) || id <= 0,
-        )
-      ) {
-        throw new Error(
-          'C_BPartner_ID pada perubahan lokasi tidak valid.',
-        );
-      }
-
-      const existingByErpId = new Map<number, Retailer>();
-      const batchSize = 200;
-
-      for (
-        let i = 0;
-        i < changedPartnerIds.length;
-        i += batchSize
-      ) {
-        const batch = changedPartnerIds.slice(i, i + batchSize);
-
-        const partners = await this.retailerRepo.find({
-          where: {
-            idempiereId: In(batch),
-          },
-        });
-
-        for (const partner of partners) {
-          existingByErpId.set(
-            Number(partner.idempiereId),
-            partner,
+        if (!Number.isSafeInteger(partnerId) || partnerId <= 0) {
+          throw new Error(
+            `C_BPartner_ID tidak valid pada lokasi ${location.id}.`,
           );
         }
+
+        refreshIds.add(partnerId);
       }
 
-      for (const location of changedLocations) {
-        const partnerId = Number(location.C_BPartner_ID.id);
-        const existing = existingByErpId.get(partnerId);
-
-        const isActive = this.toBoolean(location.IsActive);
-
-        const isTrackedLocation =
-          existing?.locationIdempiereId != null &&
-          Number(existing.locationIdempiereId) ===
-            Number(location.id);
-
-        // Data sebelum migration belum menyimpan ID lokasi.
-        const needsLegacyResolution =
-          existing != null &&
-          existing.locationIdempiereId == null;
-
-        if (
-          isActive ||
-          isTrackedLocation ||
-          needsLegacyResolution
-        ) {
-          refreshIds.add(partnerId);
-        }
-
-        // Lokasi nonaktif yang belum pernah tersimpan diabaikan.
-      }
+      this.logger.log(
+        `Retailer incremental | since=${since!.toISOString()} | ` +
+          `changedBP=${records.length} | ` +
+          `changedLocations=${changedLocations.length} | ` +
+          `refreshBP=${refreshIds.size}`,
+      );
     }
 
     if (refreshIds.size > 0) {
