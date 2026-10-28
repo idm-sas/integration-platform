@@ -10,11 +10,11 @@ import { SUCCESS_MESSAGE } from 'src/common/constants/http-status.constant';
 @Injectable()
 export class RetailerService {
   private readonly logger = new Logger(RetailerService.name);
-  
+
   constructor(
     @InjectRepository(Retailer)
     private retailerRepo: Repository<Retailer>,
-  ) {}
+  ) { }
 
   private getAllowedCategories(scopes: string[]): string[] | null {
     if (scopes.includes('product:read:*')) return null;
@@ -77,7 +77,7 @@ export class RetailerService {
     const limit = query.limit || 20;
 
     const qb = this.buildRetailerQuery(includeRules);
-    
+
     // Filter by allowed categories dari scope token
     if (allowedCats !== null && allowedCats.length > 0) {
       qb.andWhere('LOWER(category.name) IN (:...cats)', { cats: allowedCats })
@@ -87,8 +87,7 @@ export class RetailerService {
         .andWhere("retailer.isSyncToIntegration = true")
         .andWhere("retailer.isBPReplacement = false")
         .andWhere("retailer.arcode IS NOT NULL")
-        .andWhere("TRIM(retailer.arcode) <> ''")
-        .andWhere("retailer.isMainArcode = true");
+        .andWhere("TRIM(retailer.arcode) <> ''");
     }
 
     if (query.isActive !== undefined) {

@@ -366,12 +366,26 @@ export class RetailersSyncService extends BaseSyncService {
           }
 
           const [retailer, salesman, category] = await Promise.all([
-            this.retailerRepo.findOne({
-              where: {
-                idempiereId: retailerIdempiereId,
-                isMainArcode: true,
-              },
-            }),
+            (async () => {
+              const mainRetailer = await this.retailerRepo.findOne({
+                where: {
+                  idempiereId: retailerIdempiereId,
+                  isMainArcode: true,
+                },
+                order: { id: 'ASC' },
+              });
+
+              if (mainRetailer) {
+                return mainRetailer;
+              }
+
+              return this.retailerRepo.findOne({
+                where: {
+                  idempiereId: retailerIdempiereId,
+                },
+                order: { id: 'ASC' },
+              });
+            })(),
 
             this.salesmanRepo.findOne({
               where: {

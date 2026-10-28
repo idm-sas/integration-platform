@@ -192,7 +192,6 @@ export class SecondarySalesService {
                 normal
                   .where('"retailer"."isSyncToIntegration" = :syncEnabled')
                   .andWhere('"retailer"."isBPReplacement" = :replacementDisabled')
-                  .andWhere('"retailer"."isMainArcode" IS TRUE')
                   .andWhere('"salesman"."bpGroup" = :bpGroup');
               }),
             )
