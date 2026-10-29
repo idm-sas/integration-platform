@@ -17,7 +17,6 @@ export class SalesmanService {
 
     const qb = this.salesmanRepo
       .createQueryBuilder('salesman')
-      .where('salesman.isActive = true')
       .where('salesman.bpGroup = :bpGroup', { bpGroup: 'SALES SIGNIFY' })
       .orderBy('salesman.name', 'ASC');
 
