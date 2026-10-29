@@ -627,7 +627,7 @@ export class IdempiereService {
     return this.fetchAllPages<IdempiereSalesmanRecord>(
       '/api/v1/models/c_bpartner',
       {
-        '$filter': "IsSalesRep eq true and IsActive eq true",
+        '$filter': "IsSalesRep eq true and (IsActive eq true or IsActive eq false)",
         '$expand': 'AD_User',
         '$orderby': 'Value asc',
       },
@@ -639,7 +639,7 @@ export class IdempiereService {
       '/api/v1/models/c_bpartner',
       since,
       {
-        '$filter': "IsSalesRep eq true",
+        '$filter': "IsSalesRep eq true and (IsActive eq true or IsActive eq false)",
         '$expand': 'AD_User',
       },
     );
