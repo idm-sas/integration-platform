@@ -143,7 +143,7 @@ export class PrimaryInvoicesService {
 
   // ─── Mapper ke DTO ────────────────────────────────────────────────────────
   private toInvoiceDto(
-    header,
+    header: InvoiceHeader,
     lines: InvoiceLine[],
   ): PrimaryInvoicesDto {
     return new PrimaryInvoicesDto({
@@ -161,12 +161,13 @@ export class PrimaryInvoicesService {
         (sum, line) => sum + Number(line.invoicedQuantity),
         0,
       ),
-      lines: lines.map((line) => this.toLineDto(line)),
+      lines: lines.map((line) => this.toLineDto(line, header)),
     });
   }
 
-  private toLineDto(line: InvoiceLine): PrimaryInvoiceLineDto {
+  private toLineDto(line: InvoiceLine, header: InvoiceHeader): PrimaryInvoiceLineDto {
     return new PrimaryInvoiceLineDto({
+      erpSoNo:          header.orderNo,
       productErpId:     line.product?.code         ?? '',
       productName:      line.product?.name         ?? '',
       sapProductCode:   line.product?.partner_code ?? '',
