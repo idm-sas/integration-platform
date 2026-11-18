@@ -103,11 +103,11 @@ export class SecondarySalesSyncService extends BaseSyncService {
           .map((line) => Number(line.M_Product_ID!.id)),
       )];
 
-      // Retailer: dari C_BPartner_ID.Value
-      const allRetailerValues = [...new Set(
+      const allRetailerLocationIds = [...new Set(
         records
-          .map((inv) => inv.C_BPartner_ID?.Value)
-          .filter((v): v is string => !!v),
+          .map((inv) => inv.C_BPartner_Location_ID?.id)
+          .filter((id): id is number => id != null)
+          .map(Number),
       )];
 
       // Salesman: dari SalesRep_ID.C_BPartner_ID.id
@@ -128,7 +128,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
 
       this.logger.log(
         `Batch loading — products: ${allProductIdempiereIds.length} | ` +
-        `retailers: ${allRetailerValues.length} | ` +
+        `retailer locations: ${allRetailerLocationIds.length} | ` +
         `salesmen: ${allSalesmanIdempiereIds.length} | ` +
         `warehouses: ${allWarehouseIdempiereIds.length}`,
       );
@@ -136,7 +136,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
       // ── Step 3: Batch load semua lookup dari MiddleDB ─────────────────────
       const [productMap, retailerMap, salesmanMap, warehouseMap] = await Promise.all([
         this.batchFindProducts(allProductIdempiereIds),
-        this.batchFindRetailers(allRetailerValues),
+        this.batchFindRetailers(allRetailerLocationIds),
         this.batchFindSalesmen(allSalesmanIdempiereIds),
         this.batchFindWarehouses(allWarehouseIdempiereIds),
       ]);
@@ -232,7 +232,10 @@ export class SecondarySalesSyncService extends BaseSyncService {
           const taxPercent = taxRate;
 
           // ── Resolve FK ke MiddleDB ───────────────────────────────────────
-          const retailer  = retailerMap.get(raw.C_BPartner_ID?.Value ?? '');
+          const retailerLocationId = raw.C_BPartner_Location_ID?.id
+            ? Number(raw.C_BPartner_Location_ID.id)
+            : null;
+          const retailer  = retailerLocationId ? retailerMap.get(retailerLocationId) : undefined;
           const salesmanEId = raw.SalesRep_ID?.C_BPartner_ID?.id
             ? Number(raw.SalesRep_ID.C_BPartner_ID.id)
             : null;
@@ -244,7 +247,7 @@ export class SecondarySalesSyncService extends BaseSyncService {
 
           if (!retailer) {
             this.logger.debug(
-              `Retailer value=${raw.C_BPartner_ID?.Value} not in MiddleDB, skipping invoice ${raw.DocumentNo}`,
+              `Retailer locationIdempiereId=${retailerLocationId} not in MiddleDB, skipping invoice ${raw.DocumentNo}`,
             );
             result.failed++;
             continue;
@@ -504,13 +507,13 @@ export class SecondarySalesSyncService extends BaseSyncService {
     return map;
   }
 
-  private async batchFindRetailers(values: string[]): Promise<Map<string, Retailer>> {
-    const map = new Map<string, Retailer>();
-    for (let i = 0; i < values.length; i += BATCH_IN_SIZE) {
+  private async batchFindRetailers(ids: number[]): Promise<Map<number, Retailer>> {
+    const map = new Map<number, Retailer>();
+    for (let i = 0; i < ids.length; i += BATCH_IN_SIZE) {
       const rows = await this.retailerRepo.find({
-        where: { value: In(values.slice(i, i + BATCH_IN_SIZE)) },
+        where: { locationIdempiereId: In(ids.slice(i, i + BATCH_IN_SIZE)) },
       });
-      rows.forEach((r) => map.set(r.value, r));
+      rows.forEach((r) => map.set(r.locationIdempiereId, r));
     }
     return map;
   }
