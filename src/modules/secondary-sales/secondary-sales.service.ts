@@ -191,8 +191,8 @@ export class SecondarySalesService {
               new Brackets((normal) => {
                 normal
                   .where('"retailer"."isSyncToIntegration" = :syncEnabled')
-                  .andWhere('"retailer"."isBPReplacement" = :replacementDisabled')
-                  .andWhere('"salesman"."bpGroup" = :bpGroup');
+                  .andWhere('"retailer"."isBPReplacement" = :replacementDisabled');
+                  // .andWhere('"salesman"."bpGroup" = :bpGroup');
               }),
             )
             .orWhere(
@@ -211,7 +211,7 @@ export class SecondarySalesService {
         syncDisabled: false,
         replacementEnabled: true,
         replacementDisabled: false,
-        bpGroup: 'SALES SIGNIFY',
+        // bpGroup: 'SALES SIGNIFY',
       });
 
     if (SECONDARY_DOCTYPE_IDS.length > 0) {
